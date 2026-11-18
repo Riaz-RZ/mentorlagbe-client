@@ -34,6 +34,8 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 
+import ThemeToggle from "./ThemeToggle";
+
 // Navigation configuration
 const navLinks = [
   { label: "Home", href: "/" },
@@ -102,7 +104,7 @@ function RoleBadge({ role }: { role: UserRole }) {
   );
 }
 
-// Main navbar
+// Main Navbar
 export default function Navbar({
   user = null,
   onSignOut,
@@ -122,6 +124,8 @@ export default function Navbar({
   const profileHref = user
     ? getProfileRoute(user.role)
     : "/login";
+
+  const closeMobileMenu = () => setMobileMenuOpen(false);
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-slate-200/80 bg-white/95 backdrop-blur-md dark:border-slate-800 dark:bg-slate-950/95">
@@ -149,6 +153,10 @@ export default function Navbar({
 
         {/* Desktop Authentication */}
         <div className="hidden items-center gap-3 lg:flex">
+
+          {/* Theme Toggle */}
+          <ThemeToggle />
+
           {!user ? (
             <>
               <Button variant="ghost">
@@ -158,7 +166,7 @@ export default function Navbar({
               <Button
                 className="bg-blue-600 text-white hover:bg-blue-700"
               >
-                <Link href="/signup">Sign Up</Link>
+                <Link href="/register">Sign Up</Link>
               </Button>
             </>
           ) : (
@@ -266,6 +274,7 @@ export default function Navbar({
             side="right"
             className="flex w-75 flex-col sm:w-87.5"
           >
+            {/* Mobile Brand */}
             <div className="mt-6">
               <Brand />
             </div>
@@ -278,7 +287,7 @@ export default function Navbar({
                     src={user.image || ""}
                     alt={user.name}
                   />
-                  <AvatarFallback className="bg-blue-100 text-blue-700">
+                  <AvatarFallback className="bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300">
                     {user.name
                       .split(" ")
                       .map((part) => part[0])
@@ -292,6 +301,9 @@ export default function Navbar({
                   <p className="truncate text-sm font-semibold">
                     {user.name}
                   </p>
+                  <p className="truncate text-xs text-slate-500 dark:text-slate-400">
+                    {user.email}
+                  </p>
                   <RoleBadge role={user.role} />
                 </div>
               </div>
@@ -303,7 +315,7 @@ export default function Navbar({
                 <Link
                   key={link.href}
                   href={link.href}
-                  onClick={() => setMobileMenuOpen(false)}
+                  onClick={closeMobileMenu}
                   className={`rounded-lg px-3 py-3 text-sm font-medium transition-colors ${
                     isActive(link.href)
                       ? "bg-blue-50 text-blue-600 dark:bg-blue-950 dark:text-sky-400"
@@ -315,13 +327,23 @@ export default function Navbar({
               ))}
             </nav>
 
-            <div className="mt-auto flex flex-col gap-3 border-t pt-5">
+            {/* Mobile Theme Toggle */}
+            <div className="mt-5 flex items-center justify-between rounded-lg border border-slate-200 p-3 dark:border-slate-700">
+              <span className="text-sm font-medium">
+                Appearance
+              </span>
+
+              <ThemeToggle />
+            </div>
+
+            {/* Mobile Authentication */}
+            <div className="mt-auto flex flex-col gap-3 border-t border-slate-200 pt-5 dark:border-slate-700">
               {!user ? (
                 <>
                   <Button variant="outline">
                     <Link
                       href="/login"
-                      onClick={() => setMobileMenuOpen(false)}
+                      onClick={closeMobileMenu}
                     >
                       Sign In
                     </Link>
@@ -332,7 +354,7 @@ export default function Navbar({
                   >
                     <Link
                       href="/register"
-                      onClick={() => setMobileMenuOpen(false)}
+                      onClick={closeMobileMenu}
                     >
                       Sign Up
                     </Link>
@@ -340,10 +362,12 @@ export default function Navbar({
                 </>
               ) : (
                 <>
-                  <Button className="bg-blue-600 hover:bg-blue-700">
+                  <Button
+                    className="bg-blue-600 hover:bg-blue-700"
+                  >
                     <Link
                       href={dashboardHref}
-                      onClick={() => setMobileMenuOpen(false)}
+                      onClick={closeMobileMenu}
                     >
                       <LayoutDashboard className="mr-2 size-4" />
                       Dashboard
@@ -353,7 +377,7 @@ export default function Navbar({
                   <Button variant="outline">
                     <Link
                       href={profileHref}
-                      onClick={() => setMobileMenuOpen(false)}
+                      onClick={closeMobileMenu}
                     >
                       <UserRoundPen className="mr-2 size-4" />
                       Update Profile
@@ -364,7 +388,7 @@ export default function Navbar({
                     variant="ghost"
                     className="justify-start text-red-600 hover:bg-red-50 hover:text-red-700 dark:hover:bg-red-950"
                     onClick={() => {
-                      setMobileMenuOpen(false);
+                      closeMobileMenu();
                       onSignOut?.();
                     }}
                   >
