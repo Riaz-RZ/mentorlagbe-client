@@ -158,7 +158,7 @@ export default function Navbar({
               <Button
                 className="bg-blue-600 text-white hover:bg-blue-700"
               >
-                <Link href="/register">Sign Up</Link>
+                <Link href="/signup">Sign Up</Link>
               </Button>
             </>
           ) : (
