@@ -110,18 +110,10 @@ export default function SignupForm() {
 
     return (
         <Card className="border-slate-200/80 shadow-xl shadow-slate-200/50 dark:border-slate-800 dark:bg-slate-900 dark:shadow-none">
-            <CardHeader className="space-y-2 pb-5">
-                <div className="mb-2 flex size-12 items-center justify-center rounded-xl bg-blue-50 text-blue-600 dark:bg-blue-950 dark:text-sky-400">
-                    <Users className="size-6" />
-                </div>
-
+            <CardHeader className="space-y-2">
                 <CardTitle className="text-2xl font-bold tracking-tight sm:text-3xl">
                     Create your account
                 </CardTitle>
-
-                <CardDescription className="text-sm leading-6">
-                    Join MentorLagbe and start your learning journey today.
-                </CardDescription>
             </CardHeader>
 
             <CardContent>

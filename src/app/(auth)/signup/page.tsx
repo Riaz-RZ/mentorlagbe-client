@@ -113,10 +113,6 @@ export default function SignupPage() {
           </div>
 
           <SignupForm />
-
-          <p className="mt-6 text-center text-xs text-slate-400">
-            © {new Date().getFullYear()} MentorLagbe. All rights reserved.
-          </p>
         </section>
 
       </div>
