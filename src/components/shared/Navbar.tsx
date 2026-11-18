@@ -3,7 +3,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { toast } from "sonner";
 import {
   GraduationCap,
   Menu,
@@ -13,7 +14,9 @@ import {
   ChevronDown,
 } from "lucide-react";
 
-import { Button } from "@/components/ui/button";
+import { authClient } from "@/lib/auth-client";
+
+import { Button, buttonVariants } from "@/components/ui/button";
 import {
   Avatar,
   AvatarFallback,
@@ -23,6 +26,7 @@ import { Badge } from "@/components/ui/badge";
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
@@ -44,20 +48,8 @@ const navLinks = [
   { label: "How It Works", href: "/how-it-works" },
 ];
 
-// User types
+// User role
 export type UserRole = "student" | "tutor" | "admin";
-
-export interface NavbarUser {
-  name: string;
-  email: string;
-  role: UserRole;
-  image?: string;
-}
-
-interface NavbarProps {
-  user?: NavbarUser | null;
-  onSignOut?: () => void;
-}
 
 // Role-based routes
 const getDashboardRoute = (role: UserRole) => {
@@ -66,6 +58,17 @@ const getDashboardRoute = (role: UserRole) => {
 
 const getProfileRoute = (role: UserRole) => {
   return `/${role}/profile`;
+};
+
+// Generate user initials
+const getInitials = (name: string) => {
+  return name
+    .split(" ")
+    .filter(Boolean)
+    .map((part) => part[0])
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
 };
 
 // Brand component
@@ -95,37 +98,71 @@ function RoleBadge({ role }: { role: UserRole }) {
   };
 
   return (
-    <Badge
-      variant="outline"
-      className={`capitalize ${styles[role]}`}
-    >
+    <Badge variant="outline" className={`capitalize ${styles[role]}`}>
       {role}
     </Badge>
   );
 }
 
 // Main Navbar
-export default function Navbar({
-  user = null,
-  onSignOut,
-}: NavbarProps) {
+export default function Navbar() {
   const pathname = usePathname();
+  const router = useRouter();
+
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isSigningOut, setIsSigningOut] = useState(false);
+
+  // Better Auth session
+  const {
+    data: session,
+    isPending,
+  } = authClient.useSession();
+
+  const user = session?.user;
+
+  // Better Auth custom role
+  const userRole = user?.role as UserRole | undefined;
+
+  const dashboardHref = userRole
+    ? getDashboardRoute(userRole)
+    : "/login";
+
+  const profileHref = userRole
+    ? getProfileRoute(userRole)
+    : "/login";
 
   const isActive = (href: string) => {
     if (href === "/") return pathname === "/";
     return pathname === href || pathname.startsWith(`${href}/`);
   };
 
-  const dashboardHref = user
-    ? getDashboardRoute(user.role)
-    : "/login";
+  const closeMobileMenu = () => {
+    setMobileMenuOpen(false);
+  };
 
-  const profileHref = user
-    ? getProfileRoute(user.role)
-    : "/login";
+  // Better Auth sign out
+  const handleSignOut = async () => {
+    try {
+      setIsSigningOut(true);
 
-  const closeMobileMenu = () => setMobileMenuOpen(false);
+      const { error } = await authClient.signOut();
+
+      if (error) {
+        toast.error(error.message || "Failed to sign out.");
+        return;
+      }
+
+      closeMobileMenu();
+      toast.success("You have signed out successfully.");
+
+      router.replace("/");
+      router.refresh();
+    } catch {
+      toast.error("Something went wrong. Please try again.");
+    } finally {
+      setIsSigningOut(false);
+    }
+  };
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-slate-200/80 bg-white/95 backdrop-blur-md dark:border-slate-800 dark:bg-slate-950/95">
@@ -153,75 +190,73 @@ export default function Navbar({
 
         {/* Desktop Authentication */}
         <div className="hidden items-center gap-3 lg:flex">
-
-          {/* Theme Toggle */}
           <ThemeToggle />
 
-          {!user ? (
+          {isPending ? (
+            <div className="h-9 w-28 animate-pulse rounded-md bg-slate-200 dark:bg-slate-800" />
+          ) : !user ? (
             <>
-              <Button variant="ghost">
-                <Link href="/login">Sign In</Link>
-              </Button>
+              <Link href="/login" className={buttonVariants({ variant: "ghost" })}>
+                Sign In
+              </Link>
 
-              <Button
-                className="bg-blue-600 text-white hover:bg-blue-700"
+              <Link
+                href="/register"
+                className={buttonVariants({ className: "bg-blue-600 text-white hover:bg-blue-700" })}
               >
-                <Link href="/register">Sign Up</Link>
-              </Button>
+                Sign Up
+              </Link>
             </>
           ) : (
             <>
-              <Button variant="ghost">
-                <Link href={dashboardHref}>
-                  <LayoutDashboard className="mr-2 size-4" />
-                  Dashboard
-                </Link>
-              </Button>
+              {/* Dashboard */}
+              <Link href={dashboardHref} className={buttonVariants({ variant: "ghost" })}>
+                <LayoutDashboard className="mr-2 size-4" />
+                Dashboard
+              </Link>
 
+              {/* User Dropdown */}
               <DropdownMenu>
-                <DropdownMenuTrigger>
-                  <Button
-                    variant="ghost"
-                    className="flex h-auto items-center gap-2 px-2 py-1.5"
-                  >
-                    <Avatar className="size-9">
-                      <AvatarImage
-                        src={user.image || ""}
-                        alt={user.name}
-                      />
-                      <AvatarFallback className="bg-blue-100 font-semibold text-blue-700 dark:bg-blue-950 dark:text-blue-300">
-                        {user.name
-                          .split(" ")
-                          .map((part) => part[0])
-                          .slice(0, 2)
-                          .join("")
-                          .toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
+                <DropdownMenuTrigger
+                  render={
+                    <Button
+                      variant="ghost"
+                      className="flex h-auto items-center gap-2 px-2 py-1.5"
+                    />
+                  }
+                >
+                  <Avatar className="size-9">
+                    <AvatarImage
+                      src={user.image || ""}
+                      alt={user.name}
+                    />
+                    <AvatarFallback className="bg-blue-100 font-semibold text-blue-700 dark:bg-blue-950 dark:text-blue-300">
+                      {getInitials(user.name)}
+                    </AvatarFallback>
+                  </Avatar>
 
-                    <div className="flex flex-col items-start">
-                      <span className="max-w-32 truncate text-sm font-semibold">
-                        {user.name}
-                      </span>
-                      <RoleBadge role={user.role} />
-                    </div>
+                  <div className="flex flex-col items-start">
+                    <span className="max-w-32 truncate text-sm font-semibold">
+                      {user.name}
+                    </span>
 
-                    <ChevronDown className="size-4 text-slate-500" />
-                  </Button>
+                    {userRole && <RoleBadge role={userRole} />}
+                  </div>
+
+                  <ChevronDown className="size-4 text-slate-500" />
                 </DropdownMenuTrigger>
 
-                <DropdownMenuContent
-                  align="end"
-                  className="w-60"
-                >
-                  <DropdownMenuLabel>
-                    <div className="flex flex-col gap-1">
-                      <span>{user.name}</span>
-                      <span className="text-xs font-normal text-muted-foreground">
-                        {user.email}
-                      </span>
-                    </div>
-                  </DropdownMenuLabel>
+                <DropdownMenuContent align="end" className="w-60">
+                  <DropdownMenuGroup>
+                    <DropdownMenuLabel>
+                      <div className="flex flex-col gap-1">
+                        <span>{user.name}</span>
+                        <span className="text-xs font-normal text-muted-foreground">
+                          {user.email}
+                        </span>
+                      </div>
+                    </DropdownMenuLabel>
+                  </DropdownMenuGroup>
 
                   <DropdownMenuSeparator />
 
@@ -242,11 +277,12 @@ export default function Navbar({
                   <DropdownMenuSeparator />
 
                   <DropdownMenuItem
-                    onClick={onSignOut}
+                    onClick={handleSignOut}
+                    disabled={isSigningOut}
                     className="cursor-pointer text-red-600 focus:text-red-600"
                   >
                     <LogOut className="mr-2 size-4" />
-                    Sign Out
+                    {isSigningOut ? "Signing out..." : "Sign Out"}
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -259,15 +295,17 @@ export default function Navbar({
           open={mobileMenuOpen}
           onOpenChange={setMobileMenuOpen}
         >
-          <SheetTrigger>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="lg:hidden"
-              aria-label="Open navigation menu"
-            >
-              <Menu className="size-6" />
-            </Button>
+          <SheetTrigger
+            render={
+              <Button
+                variant="ghost"
+                size="icon"
+                className="lg:hidden"
+                aria-label="Open navigation menu"
+              />
+            }
+          >
+            <Menu className="size-6" />
           </SheetTrigger>
 
           <SheetContent
@@ -280,7 +318,9 @@ export default function Navbar({
             </div>
 
             {/* Mobile User Information */}
-            {user && (
+            {isPending ? (
+              <div className="mt-6 h-16 animate-pulse rounded-xl bg-slate-100 dark:bg-slate-900" />
+            ) : user ? (
               <div className="mt-6 flex items-center gap-3 rounded-xl bg-blue-50 p-3 dark:bg-slate-900">
                 <Avatar className="size-11">
                   <AvatarImage
@@ -288,12 +328,7 @@ export default function Navbar({
                     alt={user.name}
                   />
                   <AvatarFallback className="bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300">
-                    {user.name
-                      .split(" ")
-                      .map((part) => part[0])
-                      .slice(0, 2)
-                      .join("")
-                      .toUpperCase()}
+                    {getInitials(user.name)}
                   </AvatarFallback>
                 </Avatar>
 
@@ -301,13 +336,15 @@ export default function Navbar({
                   <p className="truncate text-sm font-semibold">
                     {user.name}
                   </p>
+
                   <p className="truncate text-xs text-slate-500 dark:text-slate-400">
                     {user.email}
                   </p>
-                  <RoleBadge role={user.role} />
+
+                  {userRole && <RoleBadge role={userRole} />}
                 </div>
               </div>
-            )}
+            ) : null}
 
             {/* Mobile Links */}
             <nav className="mt-8 flex flex-col gap-2">
@@ -338,62 +375,54 @@ export default function Navbar({
 
             {/* Mobile Authentication */}
             <div className="mt-auto flex flex-col gap-3 border-t border-slate-200 pt-5 dark:border-slate-700">
-              {!user ? (
+              {isPending ? (
+                <div className="h-10 animate-pulse rounded-md bg-slate-200 dark:bg-slate-800" />
+              ) : !user ? (
                 <>
-                  <Button variant="outline">
-                    <Link
-                      href="/login"
-                      onClick={closeMobileMenu}
-                    >
-                      Sign In
-                    </Link>
-                  </Button>
-
-                  <Button
-                    className="bg-blue-600 text-white hover:bg-blue-700"
+                  <Link
+                    href="/login"
+                    onClick={closeMobileMenu}
+                    className={buttonVariants({ variant: "outline" })}
                   >
-                    <Link
-                      href="/register"
-                      onClick={closeMobileMenu}
-                    >
-                      Sign Up
-                    </Link>
-                  </Button>
+                    Sign In
+                  </Link>
+
+                  <Link
+                    href="/register"
+                    onClick={closeMobileMenu}
+                    className={buttonVariants({ className: "bg-blue-600 text-white hover:bg-blue-700" })}
+                  >
+                    Sign Up
+                  </Link>
                 </>
               ) : (
                 <>
-                  <Button
-                    className="bg-blue-600 hover:bg-blue-700"
+                  <Link
+                    href={dashboardHref}
+                    onClick={closeMobileMenu}
+                    className={buttonVariants({ className: "bg-blue-600 hover:bg-blue-700" })}
                   >
-                    <Link
-                      href={dashboardHref}
-                      onClick={closeMobileMenu}
-                    >
-                      <LayoutDashboard className="mr-2 size-4" />
-                      Dashboard
-                    </Link>
-                  </Button>
+                    <LayoutDashboard className="mr-2 size-4" />
+                    Dashboard
+                  </Link>
 
-                  <Button variant="outline">
-                    <Link
-                      href={profileHref}
-                      onClick={closeMobileMenu}
-                    >
-                      <UserRoundPen className="mr-2 size-4" />
-                      Update Profile
-                    </Link>
-                  </Button>
+                  <Link
+                    href={profileHref}
+                    onClick={closeMobileMenu}
+                    className={buttonVariants({ variant: "outline" })}
+                  >
+                    <UserRoundPen className="mr-2 size-4" />
+                    Update Profile
+                  </Link>
 
                   <Button
                     variant="ghost"
+                    disabled={isSigningOut}
                     className="justify-start text-red-600 hover:bg-red-50 hover:text-red-700 dark:hover:bg-red-950"
-                    onClick={() => {
-                      closeMobileMenu();
-                      onSignOut?.();
-                    }}
+                    onClick={handleSignOut}
                   >
                     <LogOut className="mr-2 size-4" />
-                    Sign Out
+                    {isSigningOut ? "Signing out..." : "Sign Out"}
                   </Button>
                 </>
               )}

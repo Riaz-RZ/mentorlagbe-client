@@ -41,6 +41,7 @@ export default function LoginForm() {
         password: "",
     });
 
+
     const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault();
 
@@ -56,7 +57,6 @@ export default function LoginForm() {
                 email: formData.email.trim().toLowerCase(),
                 password: formData.password,
                 rememberMe,
-                callbackURL: "/",
             });
 
             if (error) {
@@ -66,8 +66,12 @@ export default function LoginForm() {
 
             toast.success("Welcome back! Login successful.");
 
-            router.push("/");
+            // Give Sonner time to display the toast before navigation.
+            await new Promise((resolve) => setTimeout(resolve, 800));
+
+            router.replace("/");
             router.refresh();
+
         } catch (error) {
             toast.error(
                 error instanceof Error
@@ -78,6 +82,7 @@ export default function LoginForm() {
             setIsSubmitting(false);
         }
     };
+
 
     const handleGoogleLogin = async () => {
         try {
