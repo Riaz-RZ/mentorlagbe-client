@@ -17,6 +17,8 @@ import {
 import { authClient } from "@/lib/auth-client";
 
 import { Button, buttonVariants } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
+import { SidebarTrigger } from "@/components/ui/sidebar";
 import {
     Avatar,
     AvatarFallback,
@@ -136,11 +138,13 @@ export default function DashboardHeader() {
     };
 
     return (
-        <header className="sticky top-16 z-30 h-16 w-full border-b border-slate-200/80 bg-white/95 backdrop-blur-md dark:border-slate-800 dark:bg-slate-950/95 lg:top-0">
+        <header className="sticky top-0 z-30 h-16 w-full border-b border-slate-200/80 bg-white/95 backdrop-blur-md dark:border-slate-800 dark:bg-slate-950/95">
             <div className="flex h-full items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
 
-                {/* Page Title */}
-                <div className="min-w-0">
+                {/* Sidebar Toggle + Page Title */}
+                <div className="flex min-w-0 items-center gap-3">
+                    <SidebarTrigger className="shrink-0" />
+                    <Separator orientation="vertical" className="h-5" />
                     <h1 className="truncate text-lg font-semibold text-slate-900 dark:text-slate-100">
                         {getPageTitle(pathname)}
                     </h1>

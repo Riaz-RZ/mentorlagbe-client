@@ -1,34 +1,38 @@
-
 "use client";
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
-import {
-    LayoutDashboard,
-    UserRound,
-    Search,
-    CalendarDays,
-    Heart,
-    MessageSquare,
-    Wallet,
-    BookOpen,
-    Users,
-    GraduationCap,
-    Settings,
-    ShieldCheck,
-    CreditCard,
-    Star,
-    LogOut,
-    Menu,
-    X,
-} from "lucide-react";
-import { useState } from "react";
 
-import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { Separator } from "@/components/ui/separator";
-import { toast } from "sonner";
+import {
+    BadgeCheck,
+    BookOpen,
+    ClipboardList,
+    FilePlus2,
+    GraduationCap,
+    Home,
+    LayoutDashboard,
+    UserRoundSearch,
+    Users,
+    Wallet,
+} from "lucide-react";
+
+import {
+    Sidebar,
+    SidebarContent,
+    SidebarFooter,
+    SidebarGroup,
+    SidebarGroupContent,
+    SidebarGroupLabel,
+    SidebarHeader,
+    SidebarMenu,
+    SidebarMenuButton,
+    SidebarMenuItem,
+    SidebarRail,
+    SidebarSeparator,
+    useSidebar,
+} from "@/components/ui/sidebar";
+import { Skeleton } from "@/components/ui/skeleton";
 
 type UserRole = "student" | "tutor" | "admin";
 
@@ -38,278 +42,246 @@ interface NavItem {
     icon: React.ElementType;
 }
 
-const navigationItems: Record<UserRole, NavItem[]> = {
+interface NavGroup {
+    label: string;
+    items: NavItem[];
+}
+
+const navigationItems: Record<UserRole, NavGroup[]> = {
     student: [
         {
-            title: "Dashboard",
-            href: "/dashboard/student",
-            icon: LayoutDashboard,
+            label: "Overview",
+            items: [
+                {
+                    title: "Overview",
+                    href: "/dashboard/student",
+                    icon: LayoutDashboard,
+                },
+            ],
         },
         {
-            title: "Browse Tutors",
-            href: "/student/tutors",
-            icon: Search,
-        },
-        {
-            title: "My Bookings",
-            href: "/student/bookings",
-            icon: CalendarDays,
-        },
-        {
-            title: "Favorites",
-            href: "/student/favorites",
-            icon: Heart,
-        },
-        {
-            title: "Messages",
-            href: "/student/messages",
-            icon: MessageSquare,
-        },
-        {
-            title: "Payments",
-            href: "/student/payments",
-            icon: CreditCard,
-        },
-        {
-            title: "My Reviews",
-            href: "/student/reviews",
-            icon: Star,
-        },
-        {
-            title: "My Profile",
-            href: "/student/profile",
-            icon: UserRound,
+            label: "Applications",
+            items: [
+                {
+                    title: "My Applications",
+                    href: "/dashboard/student/my-applications",
+                    icon: ClipboardList,
+                },
+            ],
         },
     ],
 
     tutor: [
         {
-            title: "Dashboard",
-            href: "/dashboard/tutor",
-            icon: LayoutDashboard,
+            label: "Overview",
+            items: [
+                {
+                    title: "Overview",
+                    href: "/dashboard/tutor",
+                    icon: LayoutDashboard,
+                },
+            ],
         },
         {
-            title: "My Profile",
-            href: "/tutor/profile",
-            icon: UserRound,
-        },
-        {
-            title: "My Bookings",
-            href: "/tutor/bookings",
-            icon: CalendarDays,
-        },
-        {
-            title: "My Students",
-            href: "/tutor/students",
-            icon: Users,
-        },
-        {
-            title: "My Schedule",
-            href: "/tutor/schedule",
-            icon: BookOpen,
-        },
-        {
-            title: "Messages",
-            href: "/tutor/messages",
-            icon: MessageSquare,
-        },
-        {
-            title: "Earnings",
-            href: "/tutor/earnings",
-            icon: Wallet,
-        },
-        {
-            title: "Reviews",
-            href: "/tutor/reviews",
-            icon: Star,
+            label: "Tuition",
+            items: [
+                {
+                    title: "Post a Tuition",
+                    href: "/dashboard/tutor/post-tuition",
+                    icon: FilePlus2,
+                },
+                {
+                    title: "My Tuitions",
+                    href: "/dashboard/tutor/my-tuitions",
+                    icon: BookOpen,
+                },
+                {
+                    title: "Manage Applicants",
+                    href: "/dashboard/tutor/applicants",
+                    icon: UserRoundSearch,
+                },
+            ],
         },
     ],
 
     admin: [
         {
-            title: "Dashboard",
-            href: "/dashboard/admin",
-            icon: LayoutDashboard,
+            label: "Overview",
+            items: [
+                {
+                    title: "Overview",
+                    href: "/dashboard/admin",
+                    icon: LayoutDashboard,
+                },
+            ],
         },
         {
-            title: "Manage Users",
-            href: "/admin/users",
-            icon: Users,
-        },
-        {
-            title: "Manage Tutors",
-            href: "/admin/tutors",
-            icon: GraduationCap,
-        },
-        {
-            title: "Tutor Verification",
-            href: "/admin/verifications",
-            icon: ShieldCheck,
-        },
-        {
-            title: "Manage Bookings",
-            href: "/admin/bookings",
-            icon: CalendarDays,
-        },
-        {
-            title: "Payments",
-            href: "/admin/payments",
-            icon: CreditCard,
-        },
-        {
-            title: "Manage Reviews",
-            href: "/admin/reviews",
-            icon: Star,
-        },
-        {
-            title: "Settings",
-            href: "/admin/settings",
-            icon: Settings,
+            label: "Management",
+            items: [
+                {
+                    title: "User Management",
+                    href: "/dashboard/admin/users",
+                    icon: Users,
+                },
+                {
+                    title: "Tuition Approvals",
+                    href: "/dashboard/admin/tuitions",
+                    icon: BadgeCheck,
+                },
+                {
+                    title: "Transactions",
+                    href: "/dashboard/admin/transactions",
+                    icon: Wallet,
+                },
+            ],
         },
     ],
 };
 
-interface SidebarContentProps {
-    role: UserRole;
-    onNavigate?: () => void;
+// An item is active when the pathname matches it exactly, or when it owns the
+// current path. A parent item (e.g. the role overview) does not stay active
+// while a deeper nav item is the page actually open.
+function isItemActive(pathname: string, item: NavItem, allItems: NavItem[]) {
+    if (pathname === item.href) return true;
+
+    if (!pathname.startsWith(`${item.href}/`)) return false;
+
+    return !allItems.some(
+        (other) =>
+            other.href !== item.href &&
+            other.href.startsWith(`${item.href}/`) &&
+            (pathname === other.href ||
+                pathname.startsWith(`${other.href}/`))
+    );
 }
 
-function SidebarContent({ role, onNavigate }: SidebarContentProps) {
+function SidebarBrand() {
+    return (
+        <Link href="/" className="flex items-center gap-2 px-2 py-1.5">
+            <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-blue-600 text-white">
+                <GraduationCap className="size-5" />
+            </span>
+
+            <span className="flex min-w-0 flex-col group-data-[collapsible=icon]:hidden">
+                <span className="truncate text-base font-bold text-blue-700 dark:text-blue-400">
+                    MentorLagbe
+                </span>
+                <span className="truncate text-xs text-slate-500 dark:text-slate-400">
+                    Dashboard
+                </span>
+            </span>
+        </Link>
+    );
+}
+
+interface SidebarNavProps {
+    role: UserRole;
+}
+
+function SidebarNav({ role }: SidebarNavProps) {
     const pathname = usePathname();
-    const items = navigationItems[role];
+    const { setOpenMobile } = useSidebar();
+
+    const groups = navigationItems[role];
+    const allItems = groups.flatMap((group) => group.items);
 
     return (
-        <div className="flex h-full flex-col">
-            {/* Brand */}
-            <Link
-                href="/"
-                onClick={onNavigate}
-                className="flex items-center gap-3 px-6 py-6"
-            >
-                <div className="flex size-10 items-center justify-center rounded-xl bg-blue-600 text-white">
-                    <GraduationCap className="size-6" />
-                </div>
+        <>
+            {groups.map((group) => (
+                <SidebarGroup key={group.label}>
+                    <SidebarGroupLabel>{group.label}</SidebarGroupLabel>
 
-                <div>
-                    <h2 className="text-xl font-bold text-blue-700 dark:text-blue-400">
-                        MentorLagbe
-                    </h2>
-                    <p className="text-xs text-slate-500 dark:text-slate-400">
-                        Dashboard
-                    </p>
-                </div>
-            </Link>
+                    <SidebarGroupContent>
+                        <SidebarMenu>
+                            {group.items.map((item) => {
+                                const Icon = item.icon;
 
-            <Separator />
-
-            {/* Navigation */}
-            <div className="flex-1 space-y-2 overflow-y-auto px-4 py-5">
-                <p className="mb-4 px-3 text-xs font-semibold uppercase tracking-wider text-slate-400">
-                    Main Menu
-                </p>
-
-                {items.map((item) => {
-                    const Icon = item.icon;
-
-                    const isActive =
-                        pathname === item.href ||
-                        pathname.startsWith(`${item.href}/`);
-
-                    return (
-                        <Link
-                            key={item.href}
-                            href={item.href}
-                            onClick={onNavigate}
-                            className={`flex items-center gap-3 rounded-lg px-3 py-3 text-sm font-medium transition-colors ${
-                                isActive
-                                    ? "bg-blue-600 text-white shadow-md shadow-blue-600/20"
-                                    : "text-slate-600 hover:bg-blue-50 hover:text-blue-700 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-blue-400"
-                            }`}
-                        >
-                            <Icon className="size-5 shrink-0" />
-                            <span>{item.title}</span>
-                        </Link>
-                    );
-                })}
-            </div>
-
-            <Separator />
-
-            {/* Footer */}
-            <div className="p-4">
-                <Link
-                    href="/"
-                    onClick={onNavigate}
-                    className="flex items-center gap-3 rounded-lg px-3 py-3 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
-                >
-                    <LayoutDashboard className="size-5" />
-                    Back to Website
-                </Link>
-            </div>
-        </div>
+                                return (
+                                    <SidebarMenuItem key={item.href}>
+                                        <SidebarMenuButton
+                                            render={<Link href={item.href} />}
+                                            isActive={isItemActive(
+                                                pathname,
+                                                item,
+                                                allItems
+                                            )}
+                                            tooltip={item.title}
+                                            onClick={() =>
+                                                setOpenMobile(false)
+                                            }
+                                        >
+                                            <Icon />
+                                            <span>{item.title}</span>
+                                        </SidebarMenuButton>
+                                    </SidebarMenuItem>
+                                );
+                            })}
+                        </SidebarMenu>
+                    </SidebarGroupContent>
+                </SidebarGroup>
+            ))}
+        </>
     );
 }
 
 export default function DashboardSidebar() {
     const { data: session, isPending } = authClient.useSession();
-    const [open, setOpen] = useState(false);
 
-    if (isPending) {
-        return (
-            <aside className="hidden h-screen w-64 border-r border-slate-200 bg-white lg:block dark:border-slate-800 dark:bg-slate-950">
-                <div className="space-y-4 p-6">
-                    <div className="h-10 animate-pulse rounded-lg bg-slate-200 dark:bg-slate-800" />
-                    <div className="h-8 animate-pulse rounded-lg bg-slate-200 dark:bg-slate-800" />
-                    <div className="h-8 animate-pulse rounded-lg bg-slate-200 dark:bg-slate-800" />
-                </div>
-            </aside>
-        );
-    }
+    const rawRole = session?.user?.role as UserRole | undefined;
+    const role =
+        rawRole && ["student", "tutor", "admin"].includes(rawRole)
+            ? rawRole
+            : undefined;
 
-    if (!session?.user) return null;
-
-    const role = session.user.role as UserRole;
-
-    if (!["student", "tutor", "admin"].includes(role)) return null;
+    // Wait for the session, then only render for a known dashboard role.
+    if (!isPending && !role) return null;
 
     return (
-        <>
-            {/* Desktop Sidebar */}
-            <aside className="sticky top-0 hidden h-screen w-64 shrink-0 border-r border-slate-200 bg-white lg:block dark:border-slate-800 dark:bg-slate-950">
-                <SidebarContent role={role} />
-            </aside>
+        <Sidebar collapsible="icon">
+            <SidebarHeader>
+                <SidebarBrand />
+            </SidebarHeader>
 
-            {/* Mobile Sidebar */}
-            <div className="fixed left-0 right-0 top-0 z-40 flex h-16 items-center justify-between border-b border-slate-200 bg-white px-4 lg:hidden dark:border-slate-800 dark:bg-slate-950">
-                <Link href="/" className="flex items-center gap-2">
-                    <GraduationCap className="size-7 text-blue-600" />
-                    <span className="text-lg font-bold text-blue-700 dark:text-blue-400">
-                        MentorLagbe
-                    </span>
-                </Link>
+            <SidebarSeparator />
 
-                <Sheet open={open} onOpenChange={setOpen}>
-                    <SheetTrigger>
-                        <Button
-                            variant="outline"
-                            size="icon"
-                            aria-label="Open dashboard menu"
+            <SidebarContent>
+                {isPending ? (
+                    <SidebarGroup>
+                        <SidebarGroupContent>
+                            <SidebarMenu>
+                                {Array.from({ length: 4 }).map((_, index) => (
+                                    <SidebarMenuItem key={index}>
+                                        <div className="flex h-8 items-center gap-2 rounded-md px-2">
+                                            <Skeleton className="size-4 rounded-md" />
+                                            <Skeleton className="h-4 flex-1" />
+                                        </div>
+                                    </SidebarMenuItem>
+                                ))}
+                            </SidebarMenu>
+                        </SidebarGroupContent>
+                    </SidebarGroup>
+                ) : role ? (
+                    <SidebarNav role={role} />
+                ) : null}
+            </SidebarContent>
+
+            <SidebarSeparator />
+
+            <SidebarFooter>
+                <SidebarMenu>
+                    <SidebarMenuItem>
+                        <SidebarMenuButton
+                            render={<Link href="/" />}
+                            tooltip="Back to Website"
                         >
-                            <Menu className="size-5" />
-                        </Button>
-                    </SheetTrigger>
+                            <Home />
+                            <span>Back to Website</span>
+                        </SidebarMenuButton>
+                    </SidebarMenuItem>
+                </SidebarMenu>
+            </SidebarFooter>
 
-                    <SheetContent
-                        side="left"
-                        className="w-72 p-0"
-                    >
-                        <SidebarContent
-                            role={role}
-                            onNavigate={() => setOpen(false)}
-                        />
-                    </SheetContent>
-                </Sheet>
-            </div>
-        </>
+            <SidebarRail />
+        </Sidebar>
     );
 }

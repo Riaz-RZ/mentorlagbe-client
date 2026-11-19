@@ -197,11 +197,11 @@ export default function Navbar() {
           ) : !user ? (
             <>
               <Link href="/login" className={buttonVariants({ variant: "ghost" })}>
-                Sign In
+                Log in
               </Link>
 
               <Link
-                href="/register"
+                href="/signup"
                 className={buttonVariants({ className: "bg-blue-600 text-white hover:bg-blue-700" })}
               >
                 Sign Up
