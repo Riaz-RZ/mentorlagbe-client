@@ -1,6 +1,6 @@
 import Navbar from "@/components/shared/Navbar";
 
-const RootLayout = ({children}) => {
+const RootLayout = ({children}: {children: React.ReactNode}) => {
     return (
         <>
         <Navbar/>

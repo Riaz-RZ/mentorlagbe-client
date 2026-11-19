@@ -239,6 +239,8 @@ export default function SignupForm() {
                             <div className="flex items-center gap-3">
                                 <Image
                                     src={formData.image}
+                                    width={50}
+                                    height={50}
                                     alt="Profile preview"
                                     className="size-12 rounded-full border object-cover"
                                 />

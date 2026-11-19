@@ -53,7 +53,7 @@ export type UserRole = "student" | "tutor" | "admin";
 
 // Role-based routes
 const getDashboardRoute = (role: UserRole) => {
-  return `/${role}/dashboard`;
+  return `/dashboard/${role}`;
 };
 
 const getProfileRoute = (role: UserRole) => {
