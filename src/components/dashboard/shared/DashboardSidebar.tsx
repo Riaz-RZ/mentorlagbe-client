@@ -1,7 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { useState } from "react";
+import { toast } from "sonner";
 import { authClient } from "@/lib/auth-client";
 
 import {
@@ -10,13 +12,16 @@ import {
     ClipboardList,
     FilePlus2,
     GraduationCap,
-    Home,
     LayoutDashboard,
+    LogOut,
+    UserRoundPen,
     UserRoundSearch,
     Users,
     Wallet,
 } from "lucide-react";
 
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import {
     Sidebar,
     SidebarContent,
@@ -69,6 +74,16 @@ const navigationItems: Record<UserRole, NavGroup[]> = {
                 },
             ],
         },
+        {
+            label: "Preference",
+            items: [
+                {
+                    title: "Update Profile",
+                    href: "/student/profile",
+                    icon: UserRoundPen,
+                },
+            ],
+        },
     ],
 
     tutor: [
@@ -102,6 +117,16 @@ const navigationItems: Record<UserRole, NavGroup[]> = {
                 },
             ],
         },
+        {
+            label: "Preference",
+            items: [
+                {
+                    title: "Update Profile",
+                    href: "/tutor/profile",
+                    icon: UserRoundPen,
+                },
+            ],
+        },
     ],
 
     admin: [
@@ -132,6 +157,16 @@ const navigationItems: Record<UserRole, NavGroup[]> = {
                     title: "Transactions",
                     href: "/dashboard/admin/transactions",
                     icon: Wallet,
+                },
+            ],
+        },
+        {
+            label: "Preference",
+            items: [
+                {
+                    title: "Update Profile",
+                    href: "/admin/profile",
+                    icon: UserRoundPen,
                 },
             ],
         },
@@ -171,6 +206,58 @@ function SidebarBrand() {
                 </span>
             </span>
         </Link>
+    );
+}
+
+interface SidebarUserCardProps {
+    name: string;
+    image?: string | null;
+    role: UserRole;
+}
+
+const roleBadgeStyles: Record<UserRole, string> = {
+    student:
+        "border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-900 dark:bg-blue-950 dark:text-blue-300",
+    tutor:
+        "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-300",
+    admin:
+        "border-purple-200 bg-purple-50 text-purple-700 dark:border-purple-900 dark:bg-purple-950 dark:text-purple-300",
+};
+
+function getInitials(name: string) {
+    return name
+        .split(" ")
+        .filter(Boolean)
+        .map((part) => part[0])
+        .slice(0, 2)
+        .join("")
+        .toUpperCase();
+}
+
+// Signed-in user card shown between the brand header and the nav content.
+function SidebarUserCard({ name, image, role }: SidebarUserCardProps) {
+    return (
+        <div className="mx-2 mb-1 flex items-center gap-3 rounded-lg border border-slate-200 bg-slate-50 p-3 group-data-[collapsible=icon]:mx-1! group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:border-0! group-data-[collapsible=icon]:bg-transparent! group-data-[collapsible=icon]:p-0! dark:border-slate-800 dark:bg-slate-900">
+            <Avatar className="size-9 shrink-0">
+                <AvatarImage src={image || ""} alt={name} />
+                <AvatarFallback className="bg-blue-100 text-xs font-semibold text-blue-700 dark:bg-blue-950 dark:text-blue-300">
+                    {getInitials(name)}
+                </AvatarFallback>
+            </Avatar>
+
+            <div className="min-w-0 flex-1 group-data-[collapsible=icon]:hidden">
+                <p className="truncate text-sm font-semibold text-slate-900 dark:text-slate-100">
+                    {name}
+                </p>
+
+                <Badge
+                    variant="outline"
+                    className={`mt-1 capitalize ${roleBadgeStyles[role]}`}
+                >
+                    {role}
+                </Badge>
+            </div>
+        </div>
     );
 }
 
@@ -225,7 +312,9 @@ function SidebarNav({ role }: SidebarNavProps) {
 }
 
 export default function DashboardSidebar() {
+    const router = useRouter();
     const { data: session, isPending } = authClient.useSession();
+    const [isSigningOut, setIsSigningOut] = useState(false);
 
     const rawRole = session?.user?.role as UserRole | undefined;
     const role =
@@ -233,14 +322,47 @@ export default function DashboardSidebar() {
             ? rawRole
             : undefined;
 
+    const user = session?.user;
+
     // Wait for the session, then only render for a known dashboard role.
     if (!isPending && !role) return null;
+
+    const handleSignOut = async () => {
+        try {
+            setIsSigningOut(true);
+
+            const { error } = await authClient.signOut();
+
+            if (error) {
+                toast.error(error.message || "Failed to sign out.");
+                return;
+            }
+
+            toast.success("You have signed out successfully.");
+
+            router.replace("/");
+            router.refresh();
+        } catch {
+            toast.error("Something went wrong. Please try again.");
+        } finally {
+            setIsSigningOut(false);
+        }
+    };
 
     return (
         <Sidebar collapsible="icon">
             <SidebarHeader>
                 <SidebarBrand />
             </SidebarHeader>
+
+            {/* User: picture, name and role */}
+            {user && role && (
+                <SidebarUserCard
+                    name={user.name}
+                    image={user.image}
+                    role={role}
+                />
+            )}
 
             <SidebarSeparator />
 
@@ -271,11 +393,17 @@ export default function DashboardSidebar() {
                 <SidebarMenu>
                     <SidebarMenuItem>
                         <SidebarMenuButton
-                            render={<Link href="/" />}
-                            tooltip="Back to Website"
+                            onClick={handleSignOut}
+                            disabled={isSigningOut}
+                            tooltip="Sign Out"
+                            className="text-red-600! hover:text-red-600! dark:text-red-400! dark:hover:text-red-400!"
                         >
-                            <Home />
-                            <span>Back to Website</span>
+                            <LogOut />
+                            <span>
+                                {isSigningOut
+                                    ? "Signing out..."
+                                    : "Sign Out"}
+                            </span>
                         </SidebarMenuButton>
                     </SidebarMenuItem>
                 </SidebarMenu>
