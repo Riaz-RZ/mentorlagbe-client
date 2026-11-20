@@ -86,13 +86,52 @@ Key frontend files:
 | Framework       | Express **5.3**                                    |
 | Database        | MongoDB Atlas via official `mongodb` driver **7**  |
 | Auth            | JWT issued by Better Auth, verified by Express     |
-| Entry file      | `index.js` (everything is in this one file so far) |
+| Entry file      | `src/server.js` (`src/app.js` holds the app)       |
+| Scripts         | `npm start` / `npm run dev` (node --watch)         |
 | Port            | `process.env.PORT \|\| 5000`                       |
 | DB name         | `mentorlagbe`                                      |
 
-Current backend state: MongoDB connection + three collection references
-(`users`, `tuitions`, `applications`) + `app.listen`. **No routes, no
-middleware, no JWT verification yet.**
+**Backend folder structure (as implemented):**
+
+```
+mentorlagbe-server/
+├── index.js                  # thin wrapper -> imports src/server.js (compat)
+├── src/
+│   ├── config/
+│   │   └── db.js              # connectToMongoDB() + getDb()
+│   ├── middleware/
+│   │   ├── notFound.js        # 404 handler for unknown routes
+│   │   └── errorHandler.js    # global error handler (always last)
+│   ├── routes/
+│   │   ├── healthRoutes.js    # GET /api/health (implemented)
+│   │   ├── users.js           # stub + sample GET /api/users (ApiResponse)
+│   │   ├── tuitions.js        # stub: planned Phase 2 endpoints (comments only)
+│   │   └── applications.js    # stub: planned Phase 3 endpoints (comments only)
+│   ├── utils/
+│   │   ├── ApiError.js        # ApiError class (statusCode + message)
+│   │   └── ApiResponse.js     # ApiResponse.success() standard success reply
+│   ├── app.js                 # express app: cors, json, routes, 404, error handler
+│   └── server.js              # env validation → MongoDB connect → listen
+├── .env                       # DB_URI, PORT, CLIENT_URL (gitignored)
+├── .env.example               # placeholder values, no secrets
+├── .gitignore                 # node_modules, .env
+└── package.json               # start/dev scripts
+```
+
+Notes:
+- `index.js` is only a 3-line compatibility wrapper (`import './src/server.js'`)
+  so the old filename still works — all real code lives in `src/`.
+- The three routers are **mounted** in `app.js` (`/api/users`, `/api/tuitions`,
+  `/api/applications`). `users.js` has a sample `GET /api/users`; `tuitions.js`
+  and `applications.js` are still comment-only stubs — requests to them
+  correctly return 404 until their phases are implemented.
+
+Backend foundation status: **basic foundation complete** — Express app,
+dotenv env validation, CORS (`CLIENT_URL`), `express.json()`, MongoDB
+connection (server starts only after DB connects), 404 + global error
+middleware, consistent `{ success, message, data }` response format, and
+`GET /api/health`. Route modules for users/tuitions/applications/payments and
+JWT auth middleware are **not implemented yet** (see roadmap).
 
 ## 4. Authentication Flow (Better Auth — DO NOT REBUILD)
 
@@ -238,9 +277,9 @@ public reads require `Authorization: Bearer <JWT>`.
 |               | `GET /api/users/:email`                        | self / admin  | ⬜     |
 |               | `PATCH /api/users/profile`                    | self          | ⬜     |
 |               | `PATCH /api/users/:email/role`                | admin         | ⬜     |
-| **tuitions**  | `POST /api/tuitions`                           | tutor         | ⬜     |
-|               | `GET /api/tuitions` (approved only, filters)   | public        | ⬜     |
-|               | `GET /api/tuitions/mine`                       | tutor         | ⬜     |
+| **tuitions**  | `POST /api/tuitions`                           | tutor (⚠️ no JWT yet) | ✅     |
+|               | `GET /api/tuitions` (approved only, filters)   | public        | ✅ (filters ⬜) |
+|               | `GET /api/tuitions/mine`                       | tutor (⚠️ email from query, no JWT yet) | ✅     |
 |               | `GET /api/tuitions/:id`                        | public        | ⬜     |
 |               | `PATCH /api/tuitions/:id` (edit)               | owner tutor   | ⬜     |
 |               | `PATCH /api/tuitions/:id/status`               | admin         | ⬜     |
@@ -269,13 +308,17 @@ NEXT_PUBLIC_IMGBB_API_KEY=...              # ⬜ to be added (D4)
 ### `mentorlagbe-server/.env` (gitignored)
 
 ```
-DB_URI=mongodb+srv://...          # ✅ present
-PORT=5000                         # ⬜ optional, defaults to 5000
+DB_URI=mongodb+srv://...          # ✅ present (secret — never commit)
+PORT=5000                         # ✅ present, defaults to 5000
+CLIENT_URL=http://localhost:3000  # ✅ present, used by CORS
 BETTER_AUTH_URL=http://localhost:3000   # ⬜ needed for JWKS verification (D2)
 STRIPE_SECRET_KEY=...             # ⬜ for Stripe checkout
 STRIPE_WEBHOOK_SECRET=...         # ⬜ for webhook signature
-CLIENT_URL=http://localhost:3000  # ⬜ CORS origin
 ```
+
+`.env.example` exists with placeholder values (no real secrets).
+`src/server.js` validates required vars (`DB_URI`, `CLIENT_URL`) at startup
+and exits with a clear message if any are missing.
 
 ## 10. Current Implementation Status
 
@@ -288,24 +331,88 @@ CLIENT_URL=http://localhost:3000  # ⬜ CORS origin
 - Dashboard shell: role-aware sidebar (nav per role), header (title, user menu,
   sign-out), skeletons, toast notifications.
 - Navbar with role badge + dashboard/profile links.
-- Backend: Express 5 + CORS + dotenv + MongoDB connection, `users`,
-  `tuitions`, `applications` collection references.
+- **Backend basic foundation** (see section 3 for folder structure):
+  - `src/server.js` — env validation → MongoDB connect → `app.listen`
+    (server starts only after the DB connects; exits on failure).
+  - `src/app.js` — CORS (`CLIENT_URL` only), `express.json()`, route mounting,
+    404 handler, global error handler (all in correct order).
+  - `src/config/db.js` — reusable `connectToMongoDB()` + `getDb()`, reads
+    `DB_URI` from `.env`, logs a success message.
+  - `src/middleware/notFound.js` — 404 handler for unknown routes (passes an
+    `ApiError` to the global handler).
+  - `src/middleware/errorHandler.js` — global error handler (always last);
+    reads `err.statusCode`, only logs 5xx.
+  - `src/utils/ApiResponse.js` — `ApiResponse.success(res, { message, data })`
+    → `{ success: true, message, data }`.
+  - `src/utils/ApiError.js` — `new ApiError(statusCode, message)` error class
+    for routes (`next(new ApiError(404, '...'))`).
+  - `src/config/db.js` also exports `usersCollection`, `tuitionsCollection`,
+    `applicationsCollection` — assigned **after** the connection succeeds
+    (module-level `db.collection(...)` would crash with `db === null`).
+  - `src/routes/healthRoutes.js` — `GET /api/health` (uses `ApiResponse`).
+  - **Frontend API layer** (new): `src/lib/api.ts` (`apiGet` for GET) and
+    `src/lib/actions.ts` (`apiPost` / `apiPatch` / `apiDelete` for mutable
+    calls) — both parse the `{ success, message, data }` envelope and throw
+    `message` on failure. `NEXT_PUBLIC_API_URL` added to client `.env`.
+  - **Post a Tuition page** (`dashboard/tutor/post-tuition`): shadcn form
+    (title, subject, class level, mode select, location, fee, days/week,
+    banner URL, description) → `apiPost("/api/tuitions")` → toast →
+    redirects to `/dashboard/tutor/my-tuitions`.
+  - **My Tuitions page** (`dashboard/tutor/my-tuitions`): top-right
+    "Post a Tuition" button, shadcn **Table** of own posts (title, subject,
+    class, mode, fee, status badge, created), loading skeletons, empty
+    state; data comes from `apiGet("/api/tuitions/mine?tutorEmail=…")`
+    using the Better Auth session email.
+  - Consistent response shape everywhere:
+    `{ success, message, data? }`.
+  - `.env.example`, `npm start` / `npm run dev` scripts; `index.js` kept as a
+    thin wrapper (`import './src/server.js'`) so the old filename still works.
+  - Route stubs mounted in `app.js`: `routes/users.js` (includes a sample
+    `GET /api/users` using `ApiResponse`), `routes/tuitions.js`,
+    `routes/applications.js` — planned-endpoint comments only, no real
+    logic yet (tuitions/applications return 404 until their phases start).
+  - **Dependencies: none added** — express, cors, dotenv, mongodb were
+    already installed and are reused.
+
+#### Backend test results (actually run on 2026-11-21)
+
+| Test                                   | Result                                                                 |
+| -------------------------------------- | ---------------------------------------------------------------------- |
+| `npm start` (server startup)           | ✅ `Server is running on port 5000`                                    |
+| `node index.js` (compat wrapper)       | ✅ also starts the server correctly                                     |
+| MongoDB connection (real Atlas cluster)| ✅ `You successfully connected to MongoDB!`                            |
+| `GET /api/health`                      | ✅ 200 `{"success":true,"message":"MentorLagbe API is running","data":{"status":"OK"}}` |
+| `GET /api/users` (sample endpoint)     | ✅ 200 `{"success":true,"message":"users retrived successfully","data":null}` |
+| `POST /api/tuitions` (valid body)      | ✅ 201, stored with `approvalStatus:"pending"` (server-forced)         |
+| `POST /api/tuitions` (injection attempt: client sent `approvalStatus:"approved"`, fake `createdAt`) | ✅ 201 but server overwrote both → `pending` + real date |
+| `POST /api/tuitions` (missing fields)  | ✅ 400 `{"success":false,"message":"title, subject, classLevel and monthlyFee are required"}` |
+| `GET /api/tuitions`                    | ✅ 200, returns **only** `approved` docs (pending test doc was hidden) |
+| `GET /api/tuitions/mine?tutorEmail=…`  | ✅ 200, returns only that tutor's posts (newest first)                 |
+| `GET /api/tuitions/mine` (no email)    | ✅ 400 `tutorEmail query param is required`                            |
+| Frontend `npm run build`               | ✅ compiled + TypeScript passed, all 19 routes generated               |
+| Stub route `/api/applications`        | ✅ 404 with consistent error shape (endpoints not implemented yet) |
+| Unknown route `GET /api/does-not-exist`| ✅ 404 `{"success":false,"message":"Route not found: GET /api/does-not-exist"}` |
+| Invalid JSON POST (error handler)      | ✅ 400 with `{"success":false,...}` — global handler caught it         |
+| CORS header                            | ✅ `Access-Control-Allow-Origin: http://localhost:3000`                |
+| Server logs                            | ✅ No runtime errors                                                   |
 
 ### 🚧 Placeholders (pages exist but contain only an `<h1>`/text)
 
-All 14 dashboard pages + the homepage:
-
 - `dashboard/student`, `dashboard/student/my-applications`, `dashboard/student/profile`
-- `dashboard/tutor`, `post-tuition`, `my-tuitions`, `applicants`, `profile`
-- `dashboard/admin`, `users`, `tuitions`, `transactions`, `profile`
+- `dashboard/tutor` (overview), `tutor/applicants`, `tutor/profile`
+- `dashboard/admin`, `admin/users`, `admin/tuitions`, `admin/transactions`, `admin/profile`
 - `(root)/page.tsx` (homepage — needs public tuition search)
+
+> Implemented already: `dashboard/tutor/post-tuition` (create form → POST
+> `/api/tuitions` → redirect) and `dashboard/tutor/my-tuitions` (shadcn
+> Table of own tuitions + "Post a Tuition" button).
 
 ### ❌ Not started
 
 - JWT token flow client → Express; `verifyToken` / `requireRole` middleware.
-- Every API module listed in section 8.
+- Every API module listed in section 8 (users, applications, payments, filters).
 - IMGBB banner upload, Stripe checkout + webhook, `payments` collection.
-- Frontend data fetching (zero `fetch` calls exist).
+- Frontend data fetching for the remaining pages (only tuitions wired so far).
 - Dashboard route protection (no `middleware.ts`, no role redirect).
 - Homepage search/filter UI.
 
@@ -313,13 +420,18 @@ All 14 dashboard pages + the homepage:
 
 **Phase 0 — Foundations (do first, unblocks everything)**
 
-1. Add `jwt()` plugin from `better-auth/plugins/jwt` to `src/lib/auth.ts`
+1. ✅ **Backend foundation done** — Express app, env validation, CORS
+   (`CLIENT_URL`), `express.json()`, MongoDB connection, 404 + global error
+   handler, health check, `.env.example`, `npm start`/`npm run dev` scripts.
+2. ⬜ Add `jwt()` plugin from `better-auth/plugins/jwt` to `src/lib/auth.ts`
    (do not touch existing options — only add the plugin).
-2. Add `NEXT_PUBLIC_API_URL` (and later IMGBB key) to client `.env`.
-3. Create `src/lib/api.ts`: tiny helper that fetches `/api/auth/token`,
-   caches the JWT, attaches `Authorization: Bearer` to every request.
-4. Server: add `jose` (D2), `verifyToken` + `requireRole` middleware,
-   CORS with `CLIENT_URL`, `payments` collection, `npm start` script.
+3. ✅ `NEXT_PUBLIC_API_URL=http://localhost:5000` added to client `.env`
+   (IMGBB key still pending — D4).
+4. ⬜ The current `src/lib/api.ts` is a plain GET helper. Extend it (and
+   `src/lib/actions.ts`) to fetch `/api/auth/token`, cache the JWT, and
+   attach `Authorization: Bearer` to every request.
+5. ⬜ Server: add `jose` (D2), `verifyToken` + `requireRole` middleware,
+   `payments` collection (needed in Phase 5).
 
 **Phase 1 — Users API + profile pages**
 
@@ -327,11 +439,14 @@ All 14 dashboard pages + the homepage:
 - Frontend: 3 profile pages (name, phone, bio, image, plan badge) + admin
   users table (search, role dropdown).
 
-**Phase 2 — Tuitions API + tutor pages**
+**Phase 2 — Tuitions API + tutor pages** (partially done ✅)
 
-- Backend tuitions module with ownership + admin approval checks.
-- Frontend: post-tuition form (IMGBB banner upload), my-tuitions list,
-  admin tuitions approval queue (approve/reject buttons).
+- ✅ Backend: `POST /api/tuitions`, `GET /api/tuitions` (approved only),
+  `GET /api/tuitions/mine`.
+- ✅ Frontend: post-tuition form, my-tuitions table.
+- ⬜ Backend: edit / admin approval status / isActive / detail / search filters.
+- ⬜ Frontend: admin tuitions approval queue (approve/reject buttons),
+  IMGBB banner upload (D4).
 
 **Phase 3 — Applications API + student/tutor pages**
 
@@ -397,16 +512,28 @@ All 14 dashboard pages + the homepage:
    Better Auth env. Either configure it or remove the button.
 5. **`next.config.ts`** only allows `images.unsplash.com` — IMGBB images
    (`i.ibb.co`) will throw when used with `next/image`.
-6. **`payments` collection missing** from `index.js`.
-7. **Server has no `start` script** (`package.json` `scripts.test` is the
-   default placeholder).
+6. **`payments` collection** not yet referenced in `src/config/db.js`
+   (add in Phase 5 — not needed for the foundation).
+7. ~~Server has no `start` script~~ ✅ **resolved** — `npm start` and
+   `npm run dev` now exist.
 8. **Commit messages overstate progress** — pages referenced in git log are
    still stubs.
+9. **`POST /api/tuitions` trusts `tutorName`/`tutorEmail` from the body, and
+   `GET /api/tuitions/mine` trusts `tutorEmail` from the query string** —
+   both must switch to the verified JWT as soon as `verifyToken` exists
+   (marked with TODOs in `src/routes/tuitions.js`). Until then these
+   endpoints are open to anyone and a tutor can read another tutor's posts
+   by changing the query param.
+10. **Never run `npm run build` while `npm run dev` is running** — mixing
+    production build artifacts into `.next` corrupts the dev module graph
+    and causes `module factory is not available` / `Could not validate
+    instant` errors. If it happens: stop dev, delete `.next`, restart dev,
+    hard-reload the browser (`Ctrl+Shift+R`).
 
 ## 14. Next Recommended Tasks (in order)
 
-1. Phase 0: JWT plugin + `src/lib/api.ts` + server middleware (`verifyToken`,
-   `requireRole`) + CORS + env vars.
+1. Phase 0 remainder: Better Auth `jwt()` plugin + `src/lib/api.ts` +
+   server `verifyToken` / `requireRole` middleware (`jose`) + client env vars.
 2. Phase 1: users API → profile pages (also fixes issue #1 links).
 3. Phase 2: tuitions API → post-tuition / my-tuitions / admin approvals.
 4. Phase 3: applications API → my-applications / applicants.
@@ -416,5 +543,6 @@ All 14 dashboard pages + the homepage:
 
 ---
 
-*Last updated: 2026-11-21 — after full codebase analysis of both repos.
-No features implemented yet; this file is the analysis + roadmap baseline.*
+*Last updated: 2026-11-21 — backend basic foundation implemented and tested
+(see section 10 test table). Frontend unchanged; no features beyond the
+foundation yet.*
