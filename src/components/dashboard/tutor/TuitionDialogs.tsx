@@ -54,6 +54,8 @@ export interface Tuition {
     description: string;
     approvalStatus: "pending" | "approved" | "rejected";
     isActive: boolean;
+    tutorName: string;
+    tutorEmail: string;
     createdAt: string;
 }
 
