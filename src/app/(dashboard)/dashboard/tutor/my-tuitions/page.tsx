@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { FilePlus2, Inbox } from "lucide-react";
+import { Eye, FilePlus2, Inbox, Pencil, Trash2 } from "lucide-react";
 
 import { authClient } from "@/lib/auth-client";
 import { apiGet } from "@/lib/api";
@@ -28,17 +28,12 @@ import {
     TableRow,
 } from "@/components/ui/table";
 
-interface Tuition {
-    _id: string;
-    title: string;
-    subject: string;
-    classLevel: string;
-    mode: string;
-    location: string;
-    monthlyFee: number;
-    approvalStatus: "pending" | "approved" | "rejected";
-    createdAt: string;
-}
+import {
+    DeleteTuitionDialog,
+    EditTuitionDialog,
+    ViewTuitionDialog,
+    type Tuition,
+} from "@/components/dashboard/tutor/TuitionDialogs";
 
 const statusStyles: Record<Tuition["approvalStatus"], string> = {
     pending:
@@ -49,12 +44,22 @@ const statusStyles: Record<Tuition["approvalStatus"], string> = {
         "border-red-200 bg-red-50 text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-300",
 };
 
+const activeStyles = {
+    active: "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-300",
+    close: "border-slate-200 bg-slate-50 text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300",
+};
+
 const MyTuitionsPage = () => {
     const router = useRouter();
     const { data: session, isPending } = authClient.useSession();
 
     const [tuitions, setTuitions] = useState<Tuition[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+
+    // Which dialog is open (null = none). One state per action.
+    const [viewTuition, setViewTuition] = useState<Tuition | null>(null);
+    const [editTuition, setEditTuition] = useState<Tuition | null>(null);
+    const [deleteTuition, setDeleteTuition] = useState<Tuition | null>(null);
 
     const tutorEmail = session?.user?.email;
 
@@ -93,6 +98,22 @@ const MyTuitionsPage = () => {
             cancelled = true;
         };
     }, [isPending, tutorEmail, router]);
+
+    // After a successful edit: replace that row with the updated data.
+    const handleSaved = (updated: Tuition) => {
+        setTuitions((prev) =>
+            prev.map((tuition) => (tuition._id === updated._id ? updated : tuition))
+        );
+        setEditTuition(null);
+    };
+
+    // After a successful delete: remove that row from the table.
+    const handleDeleted = (deletedId: string) => {
+        setTuitions((prev) =>
+            prev.filter((tuition) => tuition._id !== deletedId)
+        );
+        setDeleteTuition(null);
+    };
 
     return (
         <div className="space-y-4">
@@ -154,7 +175,11 @@ const MyTuitionsPage = () => {
                                     <TableHead>Mode</TableHead>
                                     <TableHead>Monthly Fee</TableHead>
                                     <TableHead>Status</TableHead>
+                                    <TableHead>Active</TableHead>
                                     <TableHead>Created</TableHead>
+                                    <TableHead className="text-right">
+                                        Actions
+                                    </TableHead>
                                 </TableRow>
                             </TableHeader>
 
@@ -181,8 +206,52 @@ const MyTuitionsPage = () => {
                                                 {tuition.approvalStatus}
                                             </Badge>
                                         </TableCell>
+                                        <TableCell>
+                                            <Badge
+                                                variant="outline"
+                                                className={`capitalize ${
+                                                    tuition.isActive
+                                                        ? activeStyles.active
+                                                        : activeStyles.close
+                                                }`}
+                                            >
+                                                {tuition.isActive ? "Active" : "Close"}
+                                            </Badge>
+                                        </TableCell>
                                         <TableCell className="text-slate-500 dark:text-slate-400">
                                             {new Date(tuition.createdAt).toLocaleDateString()}
+                                        </TableCell>
+                                        <TableCell>
+                                            <div className="flex items-center justify-end gap-1">
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon-sm"
+                                                    title="View"
+                                                    aria-label="View tuition"
+                                                    onClick={() => setViewTuition(tuition)}
+                                                >
+                                                    <Eye />
+                                                </Button>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon-sm"
+                                                    title="Edit"
+                                                    aria-label="Edit tuition"
+                                                    onClick={() => setEditTuition(tuition)}
+                                                >
+                                                    <Pencil />
+                                                </Button>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon-sm"
+                                                    title="Delete"
+                                                    aria-label="Delete tuition"
+                                                    className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+                                                    onClick={() => setDeleteTuition(tuition)}
+                                                >
+                                                    <Trash2 />
+                                                </Button>
+                                            </div>
                                         </TableCell>
                                     </TableRow>
                                 ))}
@@ -203,6 +272,36 @@ const MyTuitionsPage = () => {
                 </Link>{" "}
                 until an admin approves them.
             </p>
+
+            {/* Dialogs - only mounted while a tuition is selected */}
+            {viewTuition && (
+                <ViewTuitionDialog
+                    tuition={viewTuition}
+                    onOpenChange={(open) => {
+                        if (!open) setViewTuition(null);
+                    }}
+                />
+            )}
+
+            {editTuition && (
+                <EditTuitionDialog
+                    tuition={editTuition}
+                    onOpenChange={(open) => {
+                        if (!open) setEditTuition(null);
+                    }}
+                    onSaved={handleSaved}
+                />
+            )}
+
+            {deleteTuition && (
+                <DeleteTuitionDialog
+                    tuition={deleteTuition}
+                    onOpenChange={(open) => {
+                        if (!open) setDeleteTuition(null);
+                    }}
+                    onDeleted={handleDeleted}
+                />
+            )}
         </div>
     );
 };
