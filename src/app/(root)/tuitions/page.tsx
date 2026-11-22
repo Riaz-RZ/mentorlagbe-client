@@ -2,6 +2,7 @@
 
 import { useEffect, useState, type FormEvent } from "react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
     ArrowRight,
@@ -30,10 +31,7 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 
-import {
-    ViewTuitionDialog,
-    type Tuition,
-} from "@/components/dashboard/tutor/TuitionDialogs";
+import { type Tuition } from "@/components/dashboard/tutor/TuitionDialogs";
 
 const TuitionsPage = () => {
     const [tuitions, setTuitions] = useState<Tuition[]>([]);
@@ -44,9 +42,6 @@ const TuitionsPage = () => {
     const [subject, setSubject] = useState("all");
     const [level, setLevel] = useState("all");
     const [mode, setMode] = useState("all");
-
-    // Dialog: the tuition the user clicked "View Details" on
-    const [selected, setSelected] = useState<Tuition | null>(null);
 
     useEffect(() => {
         let cancelled = false;
@@ -264,23 +259,9 @@ const TuitionsPage = () => {
             ) : (
                 <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
                     {filtered.map((tuition) => (
-                        <TuitionCard
-                            key={tuition._id}
-                            tuition={tuition}
-                            onView={() => setSelected(tuition)}
-                        />
+                        <TuitionCard key={tuition._id} tuition={tuition} />
                     ))}
                 </div>
-            )}
-
-            {/* ---------- View Details dialog ---------- */}
-            {selected && (
-                <ViewTuitionDialog
-                    tuition={selected}
-                    onOpenChange={(open) => {
-                        if (!open) setSelected(null);
-                    }}
-                />
             )}
         </main>
     );
@@ -289,13 +270,9 @@ const TuitionsPage = () => {
 // =============================================================
 // One tuition card (same layout as the design).
 // =============================================================
-function TuitionCard({
-    tuition,
-    onView,
-}: {
-    tuition: Tuition;
-    onView: () => void;
-}) {
+function TuitionCard({ tuition }: { tuition: Tuition }) {
+    const router = useRouter();
+
     // Bookmark is visual only for now (no backend yet).
     const [saved, setSaved] = useState(false);
 
@@ -395,7 +372,7 @@ function TuitionCard({
                     </div>
 
                     <Button
-                        onClick={onView}
+                        onClick={() => router.push(`/tuitions/${tuition._id}`)}
                         className="bg-slate-900 text-white hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-white"
                     >
                         View Details
