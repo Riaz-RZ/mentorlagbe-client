@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
     ArrowLeft,
@@ -13,27 +13,53 @@ import {
     Clock,
     MapPin,
     Monitor,
+    Send,
     Share2,
     Star,
     UserRound,
 } from "lucide-react";
 
 import { apiGet } from "@/lib/api";
+import { apiPost } from "@/lib/actions";
+import { authClient } from "@/lib/auth-client";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Textarea } from "@/components/ui/textarea";
 
 import { type Tuition } from "@/components/dashboard/tutor/TuitionDialogs";
 
 const TuitionDetailsPage = () => {
     // The id comes from the URL: /tuitions/<id>
     const { id } = useParams<{ id: string }>();
+    const router = useRouter();
+
+    // Better Auth session (to know if the visitor is logged in)
+    const { data: session } = authClient.useSession();
 
     const [tuition, setTuition] = useState<Tuition | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [saved, setSaved] = useState(false); // bookmark (visual only)
+    const [applyOpen, setApplyOpen] = useState(false); // apply dialog
 
     useEffect(() => {
         let cancelled = false;
@@ -60,6 +86,45 @@ const TuitionDetailsPage = () => {
             cancelled = true;
         };
     }, [id]);
+
+    // Apply Now: not logged in -> login page, non-student -> toast,
+    // already applied -> toast, otherwise -> open the apply dialog.
+    const handleApply = async () => {
+        if (!session) {
+            router.push("/login");
+            return;
+        }
+
+        if (session.user.role !== "student") {
+            toast.info("Only students can apply for tuitions.");
+            return;
+        }
+
+        // One student can apply to a tuition only once.
+        try {
+            const mine = await apiGet<{ tuitionId: string }[]>(
+                `/api/applications/mine?studentEmail=${encodeURIComponent(session.user.email)}`
+            );
+
+            const alreadyApplied = mine.some(
+                (application) => application.tuitionId === tuition?._id
+            );
+
+            if (alreadyApplied) {
+                toast.error("You have already applied for this tuitions.");
+                return;
+            }
+        } catch (error) {
+            toast.error(
+                error instanceof Error
+                    ? error.message
+                    : "Could not check your applications."
+            );
+            return;
+        }
+
+        setApplyOpen(true);
+    };
 
     // Loading skeleton
     if (isLoading) {
@@ -349,12 +414,10 @@ const TuitionDetailsPage = () => {
                                 </div>
                             </div>
 
-                            {/* Apply (Phase 3 - applications not built yet) */}
+                            {/* Apply: logged out -> login, student -> dialog */}
                             <Button
                                 className="mt-5 w-full bg-emerald-700 text-white hover:bg-emerald-800"
-                                onClick={() =>
-                                    toast.info("Applications open in a later phase.")
-                                }
+                                onClick={handleApply}
                             >
                                 Apply Now
                             </Button>
@@ -362,6 +425,15 @@ const TuitionDetailsPage = () => {
                     </Card>
                 </div>
             </div>
+
+            {/* Apply dialog (only reachable by logged-in students) */}
+            {tuition && (
+                <ApplyDialog
+                    tuition={tuition}
+                    open={applyOpen}
+                    onOpenChange={setApplyOpen}
+                />
+            )}
         </main>
     );
 };
@@ -375,6 +447,169 @@ function Row({ label, value }: { label: string; value: React.ReactNode }) {
                 {value}
             </dd>
         </div>
+    );
+}
+
+// =============================================================
+// Apply dialog: student fills phone + schedule + note, then the
+// application is saved as "pending" (shows in My Applications).
+// =============================================================
+function ApplyDialog({
+    tuition,
+    open,
+    onOpenChange,
+}: {
+    tuition: Tuition;
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
+}) {
+    const { data: session } = authClient.useSession();
+
+    const [phone, setPhone] = useState("");
+    const [schedule, setSchedule] = useState("flexible");
+    const [note, setNote] = useState("");
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    const handleSubmit = async () => {
+        if (!phone.trim()) {
+            toast.error("Contact phone number is required.");
+            return;
+        }
+
+        setIsSubmitting(true);
+        try {
+            // TODO(Phase 0): backend will read the student from the JWT.
+            await apiPost("/api/applications", {
+                tuitionId: tuition._id,
+                tuitionTitle: tuition.title,
+                subject: tuition.subject,
+                monthlyFee: tuition.monthlyFee,
+                tutorEmail: tuition.tutorEmail,
+                studentName: session?.user?.name || "",
+                studentEmail: session?.user?.email || "",
+                studentPhone: phone.trim(),
+                preferredSchedule: schedule,
+                studentNote: note.trim(),
+            });
+
+            toast.success("Application submitted! It is pending review.");
+            onOpenChange(false);
+
+            // Reset the form for next time.
+            setPhone("");
+            setSchedule("flexible");
+            setNote("");
+        } catch (error) {
+            toast.error(
+                error instanceof Error
+                    ? error.message
+                    : "Failed to submit application."
+            );
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    return (
+        <Dialog open={open} onOpenChange={onOpenChange}>
+            <DialogContent className="sm:max-w-md">
+                <DialogHeader>
+                    <DialogTitle>Apply for Tuition</DialogTitle>
+                    <DialogDescription>
+                        Send your application details directly to{" "}
+                        {tuition.tutorName || "the tutor"}.
+                    </DialogDescription>
+                </DialogHeader>
+
+                <div className="space-y-4">
+                    {/* Tuition (read only) */}
+                    <div className="space-y-1.5">
+                        <Label>Tuition</Label>
+                        <div className="rounded-md bg-muted px-3 py-2 text-sm text-muted-foreground">
+                            {tuition.title}
+                        </div>
+                    </div>
+
+                    {/* Phone (required) */}
+                    <div className="space-y-1.5">
+                        <Label htmlFor="apply-phone">
+                            Contact Phone Number *
+                        </Label>
+                        <Input
+                            id="apply-phone"
+                            placeholder="+880-1700-000004"
+                            value={phone}
+                            onChange={(e) => setPhone(e.target.value)}
+                        />
+                    </div>
+
+                    {/* Preferred schedule */}
+                    <div className="space-y-1.5">
+                        <Label>Preferred Schedule</Label>
+                        <Select
+                            items={{
+                                flexible: "Flexible / Discuss with Tutor",
+                                morning: "Morning (6 AM - 12 PM)",
+                                afternoon: "Afternoon (12 PM - 5 PM)",
+                                evening: "Evening (5 PM - 10 PM)",
+                            }}
+                            value={schedule}
+                            onValueChange={(v) => setSchedule(String(v))}
+                        >
+                            <SelectTrigger className="w-full">
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="flexible">
+                                    Flexible / Discuss with Tutor
+                                </SelectItem>
+                                <SelectItem value="morning">
+                                    Morning (6 AM - 12 PM)
+                                </SelectItem>
+                                <SelectItem value="afternoon">
+                                    Afternoon (12 PM - 5 PM)
+                                </SelectItem>
+                                <SelectItem value="evening">
+                                    Evening (5 PM - 10 PM)
+                                </SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+
+                    {/* Optional note */}
+                    <div className="space-y-1.5">
+                        <Label htmlFor="apply-note">
+                            Notes for the Mentor (Optional)
+                        </Label>
+                        <Textarea
+                            id="apply-note"
+                            placeholder="Write a short message..."
+                            rows={3}
+                            value={note}
+                            onChange={(e) => setNote(e.target.value)}
+                        />
+                    </div>
+                </div>
+
+                <DialogFooter>
+                    <Button
+                        variant="outline"
+                        onClick={() => onOpenChange(false)}
+                        disabled={isSubmitting}
+                    >
+                        Cancel
+                    </Button>
+                    <Button
+                        className="bg-emerald-600 text-white hover:bg-emerald-700"
+                        onClick={handleSubmit}
+                        disabled={isSubmitting}
+                    >
+                        <Send className="size-4" />
+                        {isSubmitting ? "Submitting..." : "Confirm Application"}
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
     );
 }
 
