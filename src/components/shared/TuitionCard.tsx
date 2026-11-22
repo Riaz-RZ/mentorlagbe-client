@@ -6,6 +6,7 @@ import {
     ArrowRight,
     Bookmark,
     CalendarDays,
+    Crown,
     MapPin,
     Monitor,
     UserRound,
@@ -105,6 +106,12 @@ const TuitionCard = ({ tuition }: { tuition: Tuition }) => {
                     <span className="flex items-center gap-1">
                         <UserRound className="size-3.5" />
                         {tuition.tutorName || "Unknown"}
+                        {tuition.tutorPlan === "pro" && (
+                            <span className="flex items-center gap-0.5 rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold text-amber-700 dark:bg-amber-950 dark:text-amber-300">
+                                <Crown className="size-2.5" />
+                                PRO
+                            </span>
+                        )}
                     </span>
                     <span className="flex items-center gap-1">
                         <CalendarDays className="size-3.5" />

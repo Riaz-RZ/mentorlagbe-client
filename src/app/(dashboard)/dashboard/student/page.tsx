@@ -51,6 +51,9 @@ const StudentDashboardPage = () => {
 
     const studentEmail = session?.user?.email;
     const studentName = session?.user?.name || "Student";
+    // "free" | "pro" - set by the Stripe verify endpoint.
+    const plan =
+        (session?.user as { plan?: string } | undefined)?.plan ?? "free";
 
     useEffect(() => {
         if (isPending) return;
@@ -164,11 +167,14 @@ const StudentDashboardPage = () => {
                             icon={Clock}
                             iconClass="bg-emerald-50 text-emerald-600"
                         />
-                        {/* TODO(Phase 5): read users.plan once Stripe exists. */}
                         <StatCard
                             label="Current Plan"
-                            value="FREE"
-                            note="Upgrade to Pro for priority perks"
+                            value={plan === "pro" ? "PRO" : "FREE"}
+                            note={
+                                plan === "pro"
+                                    ? "You are on the Pro plan"
+                                    : "Upgrade to Pro for priority perks"
+                            }
                             icon={Crown}
                             iconClass="bg-amber-50 text-amber-500"
                         />

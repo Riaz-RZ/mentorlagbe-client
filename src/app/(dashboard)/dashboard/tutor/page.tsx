@@ -57,6 +57,9 @@ const TutorDashboardPage = () => {
 
     const tutorEmail = session?.user?.email;
     const tutorName = session?.user?.name || "Tutor";
+    // "free" | "pro" - set by the Stripe verify endpoint.
+    const plan =
+        (session?.user as { plan?: string } | undefined)?.plan ?? "free";
 
     // Load my tuition posts AND the applications I received (in parallel).
     useEffect(() => {
@@ -208,11 +211,14 @@ const TutorDashboardPage = () => {
                             icon={Users}
                             iconClass="bg-blue-50 text-blue-600"
                         />
-                        {/* TODO(Phase 5): read users.plan once Stripe exists. */}
                         <StatCard
                             label="Current Plan"
-                            value="FREE"
-                            note="Upgrade to Pro for priority perks"
+                            value={plan === "pro" ? "PRO" : "FREE"}
+                            note={
+                                plan === "pro"
+                                    ? "You are on the Pro plan"
+                                    : "Upgrade to Pro for priority perks"
+                            }
                             icon={Crown}
                             iconClass="bg-amber-50 text-amber-500"
                         />

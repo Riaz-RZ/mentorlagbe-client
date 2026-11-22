@@ -11,6 +11,7 @@ import {
     BookOpen,
     Bookmark,
     ClipboardList,
+    Crown,
     FilePlus2,
     GraduationCap,
     LayoutDashboard,
@@ -219,6 +220,7 @@ interface SidebarUserCardProps {
     name: string;
     image?: string | null;
     role: UserRole;
+    plan?: string; // "free" | "pro"
 }
 
 const roleBadgeStyles: Record<UserRole, string> = {
@@ -241,7 +243,7 @@ function getInitials(name: string) {
 }
 
 // Signed-in user card shown between the brand header and the nav content.
-function SidebarUserCard({ name, image, role }: SidebarUserCardProps) {
+function SidebarUserCard({ name, image, role, plan }: SidebarUserCardProps) {
     return (
         <div className="mx-2 mb-1 flex items-center gap-3 rounded-lg border border-slate-200 bg-slate-50 p-3 group-data-[collapsible=icon]:mx-1! group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:border-0! group-data-[collapsible=icon]:bg-transparent! group-data-[collapsible=icon]:p-0! dark:border-slate-800 dark:bg-slate-900">
             <Avatar className="size-9 shrink-0">
@@ -252,8 +254,14 @@ function SidebarUserCard({ name, image, role }: SidebarUserCardProps) {
             </Avatar>
 
             <div className="min-w-0 flex-1 group-data-[collapsible=icon]:hidden">
-                <p className="truncate text-sm font-semibold text-slate-900 dark:text-slate-100">
-                    {name}
+                <p className="flex items-center gap-1.5 text-sm font-semibold text-slate-900 dark:text-slate-100">
+                    <span className="truncate">{name}</span>
+                    {plan === "pro" && (
+                        <span className="flex shrink-0 items-center gap-0.5 rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold text-amber-700 dark:bg-amber-950 dark:text-amber-300">
+                            <Crown className="size-2.5" />
+                            PRO
+                        </span>
+                    )}
                 </p>
 
                 <Badge
@@ -361,12 +369,13 @@ export default function DashboardSidebar() {
                 <SidebarBrand />
             </SidebarHeader>
 
-            {/* User: picture, name and role */}
+            {/* User: picture, name, PRO badge and role */}
             {user && role && (
                 <SidebarUserCard
                     name={user.name}
                     image={user.image}
                     role={role}
+                    plan={(user as { plan?: string }).plan}
                 />
             )}
 

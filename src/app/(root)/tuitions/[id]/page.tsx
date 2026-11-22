@@ -11,6 +11,7 @@ import {
     CalendarDays,
     CheckCircle2,
     Clock,
+    Crown,
     MapPin,
     Monitor,
     Send,
@@ -259,8 +260,14 @@ const TuitionDetailsPage = () => {
                             <span className="flex items-center gap-1.5">
                                 <UserRound className="size-4" />
                                 Mentor:{" "}
-                                <span className="font-medium text-slate-900 dark:text-slate-100">
+                                <span className="flex items-center gap-1.5 font-medium text-slate-900 dark:text-slate-100">
                                     {tuition.tutorName || "Unknown"}
+                                    {tuition.tutorPlan === "pro" && (
+                                        <span className="flex items-center gap-0.5 rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold text-amber-700 dark:bg-amber-950 dark:text-amber-300">
+                                            <Crown className="size-2.5" />
+                                            PRO
+                                        </span>
+                                    )}
                                 </span>
                             </span>
                             <span className="flex items-center gap-1.5">
@@ -404,8 +411,14 @@ const TuitionDetailsPage = () => {
                                         {(tuition.tutorName || "?").charAt(0).toUpperCase()}
                                     </span>
                                     <div className="min-w-0">
-                                        <p className="truncate text-sm font-medium text-slate-900 dark:text-slate-100">
+                                        <p className="flex flex-wrap items-center gap-1.5 text-sm font-medium text-slate-900 dark:text-slate-100">
                                             {tuition.tutorName || "Unknown"}
+                                            {tuition.tutorPlan === "pro" && (
+                                                <span className="flex items-center gap-0.5 rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold text-amber-700 dark:bg-amber-950 dark:text-amber-300">
+                                                    <Crown className="size-2.5" />
+                                                    PRO
+                                                </span>
+                                            )}
                                         </p>
                                         <p className="truncate text-xs text-slate-500 dark:text-slate-400">
                                             {tuition.tutorEmail}

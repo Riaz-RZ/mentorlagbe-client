@@ -1,10 +1,12 @@
 "use client";
 
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { ArrowRight, Check, Monitor } from "lucide-react";
+import { ArrowRight, Check, Loader2, Monitor } from "lucide-react";
 
 import { authClient } from "@/lib/auth-client";
+import { apiPost } from "@/lib/actions";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -24,9 +26,12 @@ const proFeatures = [
 const PlanSection = () => {
     const router = useRouter();
     const { data: session } = authClient.useSession();
+    const [isRedirecting, setIsRedirecting] = useState(false);
 
     // Better Auth types role as "student" | "tutor" (admin lives in the DB).
     const role = session?.user?.role as string | undefined;
+    // "free" | "pro" - set by the Stripe verify endpoint (default free).
+    const plan = (session?.user as { plan?: string } | undefined)?.plan;
 
     // Not logged in -> sign up page. Logged in -> own dashboard.
     const handleGetStarted = () => {
@@ -38,7 +43,7 @@ const PlanSection = () => {
     };
 
     // Only a logged-in student / tutor can upgrade to Pro.
-    const handleUpgrade = () => {
+    const handleUpgrade = async () => {
         if (!session) {
             toast.error("Please log in to upgrade to Pro");
             router.push("/login");
@@ -50,11 +55,30 @@ const PlanSection = () => {
             return;
         }
 
-        // TODO(Phase 5): create a Stripe checkout session and redirect
-        // to session.url instead of this placeholder toast.
-        toast.info(
-            "Stripe checkout is coming soon - your plan will upgrade after payment."
-        );
+        if (plan === "pro") {
+            toast.info("You already have the MentorLagbe PRO plan.");
+            return;
+        }
+
+        // Create a Stripe Checkout session and go to its hosted page.
+        try {
+            setIsRedirecting(true);
+            const { url } = await apiPost<{ url: string }>(
+                "/api/payments/checkout",
+                {
+                    userEmail: session.user.email,
+                    userRole: role,
+                }
+            );
+            window.location.href = url;
+        } catch (error) {
+            setIsRedirecting(false);
+            toast.error(
+                error instanceof Error
+                    ? error.message
+                    : "Could not start checkout."
+            );
+        }
     };
 
     return (
@@ -175,10 +199,22 @@ const PlanSection = () => {
 
                     <Button
                         onClick={handleUpgrade}
+                        disabled={isRedirecting}
                         className="mt-6 w-full gap-2 bg-emerald-600 text-white hover:bg-emerald-700"
                     >
-                        Upgrade to Pro
-                        <ArrowRight className="size-4" />
+                        {isRedirecting ? (
+                            <>
+                                <Loader2 className="size-4 animate-spin" />
+                                Redirecting to Stripe...
+                            </>
+                        ) : plan === "pro" ? (
+                            "You're on Pro ✓"
+                        ) : (
+                            <>
+                                Upgrade to Pro
+                                <ArrowRight className="size-4" />
+                            </>
+                        )}
                     </Button>
                 </div>
             </div>

@@ -15,6 +15,14 @@ export const auth = betterAuth({
                 type: ["student", "tutor"],
                 required: true,
                 input: true,
+            },
+            // "free" | "pro" - only the Stripe verify endpoint sets this
+            // (input: false so clients can never set it themselves).
+            plan: {
+                type: "string",
+                required: false,
+                input: false,
+                defaultValue: "free",
             }
         }
     },

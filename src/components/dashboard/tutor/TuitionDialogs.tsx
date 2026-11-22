@@ -56,6 +56,8 @@ export interface Tuition {
     isActive: boolean;
     tutorName: string;
     tutorEmail: string;
+    // Attached by the API: the tutor's current plan ("pro" | "free").
+    tutorPlan?: string;
     createdAt: string;
 }
 
