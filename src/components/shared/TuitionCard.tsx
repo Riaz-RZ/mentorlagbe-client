@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import {
@@ -17,16 +16,18 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 
 import { type Tuition } from "@/components/dashboard/tutor/TuitionDialogs";
+import { useSavedTuitions } from "@/components/providers/SavedTuitionsProvider";
 
 // =============================================================
-// One tuition card. Shared by the Browse Tuitions page and the
-// Featured Tuitions section on the homepage.
+// One tuition card. Shared by the Browse Tuitions page, the
+// Featured Tuitions section and the Saved Tuitions page.
 // =============================================================
 const TuitionCard = ({ tuition }: { tuition: Tuition }) => {
     const router = useRouter();
 
-    // Bookmark is visual only for now (no backend yet).
-    const [saved, setSaved] = useState(false);
+    // Saved state comes from the shared context (works on every page).
+    const { isSaved, toggleSave } = useSavedTuitions();
+    const saved = isSaved(tuition._id);
 
     const hasImage = tuition.bannerImage.startsWith("http");
 
@@ -62,11 +63,11 @@ const TuitionCard = ({ tuition }: { tuition: Tuition }) => {
                         </Badge>
                     )}
 
-                    {/* Bookmark (top-right) */}
+                    {/* Bookmark (top-right) - save / unsave */}
                     <button
                         type="button"
-                        aria-label="Save tuition"
-                        onClick={() => setSaved((prev) => !prev)}
+                        aria-label={saved ? "Remove saved tuition" : "Save tuition"}
+                        onClick={() => toggleSave(tuition)}
                         className="absolute right-2 top-2 flex size-8 items-center justify-center rounded-full bg-white text-slate-700 shadow-md transition-colors hover:text-emerald-600 dark:bg-white dark:text-slate-700"
                     >
                         <Bookmark

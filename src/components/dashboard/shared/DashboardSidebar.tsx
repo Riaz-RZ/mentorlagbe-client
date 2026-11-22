@@ -9,6 +9,7 @@ import { authClient } from "@/lib/auth-client";
 import {
     BadgeCheck,
     BookOpen,
+    Bookmark,
     ClipboardList,
     FilePlus2,
     GraduationCap,
@@ -71,6 +72,11 @@ const navigationItems: Record<UserRole, NavGroup[]> = {
                     title: "My Applications",
                     href: "/dashboard/student/my-applications",
                     icon: ClipboardList,
+                },
+                {
+                    title: "Saved Tuitions",
+                    href: "/dashboard/student/saved-tuitions",
+                    icon: Bookmark,
                 },
             ],
         },

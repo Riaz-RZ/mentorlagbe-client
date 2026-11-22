@@ -193,18 +193,13 @@ const StudentDashboardPage = () => {
                         subtitle="Track and manage submissions"
                     />
 
-                    {/* No saved-tuitions page yet (bookmark is visual only). */}
+                    {/* Saved Tuitions page exists now. */}
                     <ActionRow
-                        href=""
+                        href="/dashboard/student/saved-tuitions"
                         icon={Bookmark}
                         iconClass="bg-amber-50 text-amber-600"
                         title="Saved Tuitions"
                         subtitle="Your bookmarked subjects"
-                        onClick={() =>
-                            toast.info(
-                                "Saved tuitions open in a later phase."
-                            )
-                        }
                     />
 
                     <ActionRow
