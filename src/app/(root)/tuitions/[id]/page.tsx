@@ -133,7 +133,7 @@ const TuitionDetailsPage = () => {
                 <Skeleton className="h-6 w-44" />
                 <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
                     <div className="space-y-4 lg:col-span-2">
-                        <Skeleton className="aspect-[16/9] w-full rounded-xl" />
+                        <Skeleton className="aspect-video w-full rounded-xl" />
                         <Skeleton className="h-8 w-3/4" />
                         <Skeleton className="h-24 w-full rounded-xl" />
                     </div>
@@ -182,7 +182,7 @@ const TuitionDetailsPage = () => {
                 {/* ================= LEFT (2 cols) ================= */}
                 <div className="space-y-6 lg:col-span-2">
                     {/* Banner image */}
-                    <div className="relative aspect-[16/9] overflow-hidden rounded-xl bg-slate-100 dark:bg-slate-800">
+                    <div className="relative aspect-video overflow-hidden rounded-xl bg-slate-100 dark:bg-slate-800">
                         {tuition.bannerImage.startsWith("http") ? (
                             <Image
                                 src={tuition.bannerImage}
