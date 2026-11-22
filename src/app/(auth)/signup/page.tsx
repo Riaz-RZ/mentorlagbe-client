@@ -16,17 +16,17 @@ export default function SignupPage() {
 
         {/* Left Side - Brand Section */}
         <section className="hidden lg:block">
-          <div className="relative overflow-hidden rounded-3xl bg-linear-to-br from-blue-700 via-blue-600 to-sky-500 p-10 text-white shadow-2xl shadow-blue-500/20">
+          <div className="relative overflow-hidden rounded-3xl border border-border bg-card p-10 text-foreground shadow-2xl shadow-foreground/5">
 
             {/* Decorative shapes */}
-            <div className="absolute -right-20 -top-20 size-72 rounded-full bg-white/10" />
-            <div className="absolute -bottom-28 -left-20 size-80 rounded-full bg-sky-300/20" />
+            <div className="absolute -right-20 -top-20 size-72 rounded-full bg-primary/10" />
+            <div className="absolute -bottom-28 -left-20 size-80 rounded-full bg-primary/15" />
 
             <div className="relative z-10">
 
               {/* Logo */}
               <Link href="/" className="inline-flex items-center gap-2">
-                <div className="flex size-11 items-center justify-center rounded-xl bg-white/15 backdrop-blur">
+                <div className="flex size-11 items-center justify-center rounded-xl bg-primary/20">
                   <GraduationCap className="size-7" />
                 </div>
 
@@ -37,19 +37,19 @@ export default function SignupPage() {
 
               {/* Hero Content */}
               <div className="mt-20">
-                <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-sm">
-                  <Sparkles className="size-4 text-yellow-300" />
+                <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-border bg-muted px-4 py-2 text-sm text-muted-foreground">
+                  <Sparkles className="size-4 text-primary-foreground" />
                   Your learning journey starts here
                 </div>
 
                 <h1 className="max-w-lg text-4xl font-bold leading-tight xl:text-5xl">
                   Find the right mentor.
-                  <span className="mt-2 block text-sky-200">
+                  <span className="mt-2 block text-primary-foreground">
                     Unlock your potential.
                   </span>
                 </h1>
 
-                <p className="mt-6 max-w-md leading-7 text-blue-50">
+                <p className="mt-6 max-w-md leading-7 text-muted-foreground">
                   Connect with experienced tutors, learn new skills,
                   and achieve your goals with personalized learning
                   experiences.
@@ -64,8 +64,8 @@ export default function SignupPage() {
                   "Learn at your own pace",
                 ].map((item) => (
                   <div key={item} className="flex items-center gap-3">
-                    <CheckCircle2 className="size-5 shrink-0 text-sky-200" />
-                    <span className="text-sm font-medium text-white/95">
+                    <CheckCircle2 className="size-5 shrink-0 text-primary-foreground" />
+                    <span className="text-sm font-medium text-foreground">
                       {item}
                     </span>
                   </div>
@@ -73,9 +73,9 @@ export default function SignupPage() {
               </div>
 
               {/* Bottom Card */}
-              <div className="mt-16 rounded-2xl border border-white/20 bg-white/10 p-5 backdrop-blur-md">
+              <div className="mt-16 rounded-2xl border border-border bg-muted p-5">
                 <div className="flex items-center gap-4">
-                  <div className="flex size-12 items-center justify-center rounded-xl bg-white text-blue-600">
+                  <div className="flex size-12 items-center justify-center rounded-xl bg-primary text-primary-foreground">
                     <BookOpen className="size-6" />
                   </div>
 
@@ -83,7 +83,7 @@ export default function SignupPage() {
                     <p className="font-semibold">
                       Knowledge connects us.
                     </p>
-                    <p className="mt-1 text-sm text-blue-100">
+                    <p className="mt-1 text-sm text-muted-foreground">
                       Learn, teach and grow together.
                     </p>
                   </div>
@@ -105,9 +105,7 @@ export default function SignupPage() {
               </div>
 
               <span className="text-2xl font-bold tracking-tight text-blue-900 dark:text-white">
-                Mentor<span className="text-blue-600 dark:text-sky-400">
-                  Lagbe
-                </span>
+                Mentor<span>Lagbe</span>
               </span>
             </Link>
           </div>

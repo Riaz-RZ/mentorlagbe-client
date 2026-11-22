@@ -133,7 +133,7 @@ const TuitionCard = ({ tuition }: { tuition: Tuition }) => {
 
                     <Button
                         onClick={() => router.push(`/tuitions/${tuition._id}`)}
-                        className="bg-slate-900 text-white hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-white"
+                        className="bg-primary text-primary-foreground hover:bg-primary-hover"
                     >
                         View Details
                         <ArrowRight className="size-4" />

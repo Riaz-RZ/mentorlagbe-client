@@ -148,7 +148,7 @@ const PlanSection = () => {
 
                     <Button
                         onClick={handleGetStarted}
-                        className="mt-5 w-full bg-slate-900 text-white hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-white"
+                        className="mt-5 w-full bg-primary text-primary-foreground hover:bg-primary-hover"
                     >
                         Get Started Free
                     </Button>
@@ -211,7 +211,7 @@ const PlanSection = () => {
                     <Button
                         onClick={handleUpgrade}
                         disabled={isRedirecting}
-                        className="mt-6 w-full gap-2 bg-emerald-600 text-white hover:bg-emerald-700"
+                        className="mt-6 w-full gap-2 bg-primary text-primary-foreground hover:bg-primary-hover"
                     >
                         {isRedirecting ? (
                             <>

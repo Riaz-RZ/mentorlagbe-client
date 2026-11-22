@@ -39,6 +39,11 @@ Design rules for this project (non-negotiable):
    checked in the backend from the verified JWT.
 9. Students can only access their **own** applications. Admins can access all
    users, all tuitions, all tutors, and all applications.
+10. Use the shared light/dark palette in `src/app/globals.css`: light
+     background `#F0F2E9`, card `#FFFFFF`, foreground `#171F1B`, muted text
+     `#526052`, border `#DCE3D8`, and primary `#B5D66B` (hover `#A2C451`);
+     dark background `#171F1B`, card `#29372E`, foreground `#F0F2E9`, muted
+     text `#C3CCC3`, border `#35463A`, with the same primary colors.
 
 ## 2. Repository Layout
 
@@ -543,6 +548,5 @@ and exits with a clear message if any are missing.
 
 ---
 
-*Last updated: 2026-11-21 — backend basic foundation implemented and tested
-(see section 10 test table). Frontend unchanged; no features beyond the
-foundation yet.*
+*Last updated: 2026-11-23 — shared light/dark UI palette applied; backend
+basic foundation implemented and tested (see section 10 test table).*

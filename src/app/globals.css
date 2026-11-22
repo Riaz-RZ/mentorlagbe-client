@@ -23,6 +23,72 @@
   --color-chart-3: var(--chart-3);
   --color-chart-2: var(--chart-2);
   --color-chart-1: var(--chart-1);
+  --color-slate-50: var(--background);
+  --color-slate-100: var(--muted);
+  --color-slate-200: var(--border);
+  --color-slate-300: var(--border);
+  --color-slate-400: var(--muted-foreground);
+  --color-slate-500: var(--muted-foreground);
+  --color-slate-600: var(--muted-foreground);
+  --color-slate-700: var(--foreground);
+  --color-slate-800: var(--card);
+  --color-slate-900: var(--foreground);
+  --color-slate-950: var(--background);
+  --color-blue-50: color-mix(in srgb, var(--primary) 12%, var(--card));
+  --color-blue-100: color-mix(in srgb, var(--primary) 20%, var(--card));
+  --color-blue-200: var(--border);
+  --color-blue-300: var(--border);
+  --color-blue-400: var(--primary);
+  --color-blue-500: var(--primary);
+  --color-blue-600: var(--primary);
+  --color-blue-700: var(--primary-hover);
+  --color-blue-800: var(--primary-hover);
+  --color-blue-900: var(--border);
+  --color-blue-950: var(--card);
+  --color-sky-50: color-mix(in srgb, var(--primary) 12%, var(--card));
+  --color-sky-100: color-mix(in srgb, var(--primary) 20%, var(--card));
+  --color-sky-200: var(--border);
+  --color-sky-300: var(--border);
+  --color-sky-400: var(--primary);
+  --color-sky-500: var(--primary);
+  --color-sky-600: var(--primary);
+  --color-sky-700: var(--primary-hover);
+  --color-sky-800: var(--primary-hover);
+  --color-sky-900: var(--border);
+  --color-sky-950: var(--card);
+  --color-indigo-50: color-mix(in srgb, var(--primary) 12%, var(--card));
+  --color-indigo-100: color-mix(in srgb, var(--primary) 20%, var(--card));
+  --color-indigo-200: var(--border);
+  --color-indigo-300: var(--border);
+  --color-indigo-400: var(--primary);
+  --color-indigo-500: var(--primary);
+  --color-indigo-600: var(--primary);
+  --color-indigo-700: var(--primary-hover);
+  --color-indigo-800: var(--primary-hover);
+  --color-indigo-900: var(--border);
+  --color-indigo-950: var(--card);
+  --color-emerald-50: color-mix(in srgb, var(--primary) 12%, var(--card));
+  --color-emerald-100: color-mix(in srgb, var(--primary) 20%, var(--card));
+  --color-emerald-200: var(--border);
+  --color-emerald-300: var(--border);
+  --color-emerald-400: var(--primary);
+  --color-emerald-500: var(--primary);
+  --color-emerald-600: var(--primary);
+  --color-emerald-700: var(--primary-hover);
+  --color-emerald-800: var(--primary-hover);
+  --color-emerald-900: var(--border);
+  --color-emerald-950: var(--card);
+  --color-purple-50: color-mix(in srgb, var(--primary) 12%, var(--card));
+  --color-purple-100: color-mix(in srgb, var(--primary) 20%, var(--card));
+  --color-purple-200: var(--border);
+  --color-purple-300: var(--border);
+  --color-purple-400: var(--primary);
+  --color-purple-500: var(--primary);
+  --color-purple-600: var(--primary);
+  --color-purple-700: var(--primary-hover);
+  --color-purple-800: var(--primary-hover);
+  --color-purple-900: var(--border);
+  --color-purple-950: var(--card);
   --color-ring: var(--ring);
   --color-input: var(--input);
   --color-border: var(--border);
@@ -35,6 +101,7 @@
   --color-secondary: var(--secondary);
   --color-primary-foreground: var(--primary-foreground);
   --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
   --color-popover-foreground: var(--popover-foreground);
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
@@ -49,72 +116,162 @@
 }
 
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
+  --background: #f0f2e9;
+  --foreground: #171f1b;
+  --card: #ffffff;
+  --card-foreground: #171f1b;
+  --popover: #ffffff;
+  --popover-foreground: #171f1b;
+  --primary: #b5d66b;
+  --primary-foreground: #171f1b;
+  --primary-hover: #a2c451;
+  --secondary: #dce3d8;
+  --secondary-foreground: #171f1b;
+  --muted: #e8ece2;
+  --muted-foreground: #526052;
+  --accent: #dce3d8;
+  --accent-foreground: #171f1b;
   --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
+  --border: #dce3d8;
+  --input: #dce3d8;
+  --ring: #a2c451;
+  --chart-1: #b5d66b;
+  --chart-2: #526052;
+  --chart-3: #a2c451;
+  --chart-4: #dce3d8;
+  --chart-5: #171f1b;
   --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --sidebar: #ffffff;
+  --sidebar-foreground: #171f1b;
+  --sidebar-primary: #b5d66b;
+  --sidebar-primary-foreground: #171f1b;
+  --sidebar-accent: #dce3d8;
+  --sidebar-accent-foreground: #171f1b;
+  --sidebar-border: #dce3d8;
+  --sidebar-ring: #a2c451;
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
+  --background: #171f1b;
+  --foreground: #f0f2e9;
+  --card: #29372e;
+  --card-foreground: #f0f2e9;
+  --popover: #29372e;
+  --popover-foreground: #f0f2e9;
+  --primary: #b5d66b;
+  --primary-foreground: #171f1b;
+  --primary-hover: #a2c451;
+  --secondary: #35463a;
+  --secondary-foreground: #f0f2e9;
+  --muted: #29372e;
+  --muted-foreground: #c3ccc3;
+  --accent: #35463a;
+  --accent-foreground: #f0f2e9;
   --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  --border: #35463a;
+  --input: #35463a;
+  --ring: #a2c451;
+  --chart-1: #b5d66b;
+  --chart-2: #c3ccc3;
+  --chart-3: #a2c451;
+  --chart-4: #35463a;
+  --chart-5: #f0f2e9;
+  --sidebar: #29372e;
+  --sidebar-foreground: #f0f2e9;
+  --sidebar-primary: #b5d66b;
+  --sidebar-primary-foreground: #171f1b;
+  --sidebar-accent: #35463a;
+  --sidebar-accent-foreground: #f0f2e9;
+  --sidebar-border: #35463a;
+  --sidebar-ring: #a2c451;
+}
+
+@layer utilities {
+  .text-blue-600,
+  .text-blue-700,
+  .text-blue-400,
+  .text-blue-500,
+  .text-indigo-600,
+  .text-indigo-700,
+  .text-indigo-400,
+  .text-indigo-500,
+  .text-sky-600,
+  .text-sky-700,
+  .text-sky-400,
+  .text-sky-500,
+  .text-emerald-600,
+  .text-emerald-700,
+  .text-emerald-400,
+  .text-emerald-500,
+  .text-purple-600,
+  .text-purple-700,
+  .text-purple-400,
+  .text-purple-500 {
+    color: var(--foreground);
+  }
+
+  .text-blue-900,
+  .text-indigo-900,
+  .text-emerald-900,
+  .text-purple-900 {
+    color: var(--foreground);
+  }
+
+  .hover\:text-blue-600:hover,
+  .hover\:text-sky-600:hover,
+  .hover\:text-emerald-600:hover,
+  .hover\:text-purple-600:hover {
+    color: var(--foreground);
+  }
+
+  .group:hover .group-hover\:text-emerald-600 {
+    color: var(--foreground);
+  }
+
+  .text-slate-800 {
+    color: var(--foreground);
+  }
+
+  .dark .dark\:text-slate-100,
+  .dark .dark\:text-slate-300,
+  .dark .dark\:text-blue-300,
+  .dark .dark\:text-indigo-300,
+  .dark .dark\:text-emerald-300,
+  .dark .dark\:text-purple-300 {
+    color: var(--foreground);
+  }
+
+  :is(
+      .bg-blue-600,
+      .bg-blue-700,
+      .bg-sky-600,
+      .bg-sky-700,
+      .bg-indigo-600,
+      .bg-indigo-700,
+      .bg-emerald-500,
+      .bg-emerald-600,
+      .bg-emerald-700,
+      .bg-purple-500,
+      .bg-purple-600,
+      .bg-purple-700
+    ).text-white {
+    color: var(--primary-foreground);
+  }
+
+  .bg-slate-900.text-white {
+    color: var(--background);
+  }
+
+  .dark .dark\:bg-slate-900,
+  .dark .dark\:bg-slate-800,
+  .dark .dark\:bg-slate-100 {
+    background-color: var(--card);
+  }
+
+  button:not(:disabled):not([aria-disabled="true"]),
+  [role="button"]:not([aria-disabled="true"]) {
+    cursor: pointer;
+  }
 }
 
 @layer base {

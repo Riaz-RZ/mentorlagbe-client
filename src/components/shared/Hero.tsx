@@ -94,21 +94,21 @@ const Hero = () => {
                 <TabsList className="mx-auto flex h-auto w-full flex-row gap-1 rounded-xl bg-white p-1.5 shadow-sm ring-1 ring-slate-200 dark:bg-slate-900 dark:ring-slate-800">
                     <TabsTrigger
                         value="find"
-                        className="flex-1 gap-2 rounded-lg px-3 py-2.5 data-active:bg-blue-600 data-active:text-white"
+                        className="flex-1 gap-2 rounded-lg px-3 py-2.5 data-active:bg-primary data-active:text-primary-foreground"
                     >
                         <Search className="size-4" />
                         Find Tuition
                     </TabsTrigger>
                     <TabsTrigger
                         value="tutor"
-                        className="flex-1 gap-2 rounded-lg px-3 py-2.5 data-active:bg-emerald-600 data-active:text-white"
+                        className="flex-1 gap-2 rounded-lg px-3 py-2.5 data-active:bg-primary data-active:text-primary-foreground"
                     >
                         <GraduationCap className="size-4" />
                         Become a Tutor
                     </TabsTrigger>
                     <TabsTrigger
                         value="live"
-                        className="flex-1 gap-2 rounded-lg px-3 py-2.5 data-active:bg-purple-600 data-active:text-white"
+                        className="flex-1 gap-2 rounded-lg px-3 py-2.5 data-active:bg-primary data-active:text-primary-foreground"
                     >
                         <Video className="size-4" />
                         Live Classes

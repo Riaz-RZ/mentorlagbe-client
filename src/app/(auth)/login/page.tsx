@@ -21,7 +21,7 @@ export default function LoginPage() {
                             </div>
 
                             <span className="text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white">
-                                Mentor<span className="text-blue-600">Lagbe</span>
+                                Mentor<span>Lagbe</span>
                             </span>
                         </Link>
 
@@ -105,7 +105,7 @@ export default function LoginPage() {
                     <div className="mb-6 flex items-center justify-center gap-2 lg:hidden">
                         <GraduationCap className="size-8 text-blue-600" />
                         <span className="text-2xl font-extrabold text-slate-900 dark:text-white">
-                            Mentor<span className="text-blue-600">Lagbe</span>
+                            Mentor<span>Lagbe</span>
                         </span>
                     </div>
 

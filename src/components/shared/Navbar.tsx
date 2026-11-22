@@ -75,12 +75,12 @@ const getInitials = (name: string) => {
 function Brand() {
   return (
     <Link href="/" className="flex items-center gap-2">
-      <div className="flex size-10 items-center justify-center rounded-xl bg-blue-600 text-white shadow-sm">
+      <div className="flex size-10 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm">
         <GraduationCap className="size-6" />
       </div>
 
-      <span className="text-2xl font-bold tracking-tight text-blue-900 dark:text-white">
-        Mentor<span className="text-blue-600 dark:text-sky-400">Lagbe</span>
+      <span className="text-2xl font-bold tracking-tight text-foreground">
+        Mentor<span>Lagbe</span>
       </span>
     </Link>
   );

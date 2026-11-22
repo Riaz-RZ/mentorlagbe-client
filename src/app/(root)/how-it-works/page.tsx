@@ -164,11 +164,11 @@ function StepCard({
     return (
         <div className="group relative rounded-2xl border border-slate-200 bg-white p-6 transition-all duration-300 hover:-translate-y-1 hover:border-emerald-300 hover:shadow-xl hover:shadow-emerald-100/50 dark:border-slate-800 dark:bg-slate-900 dark:hover:border-emerald-500/40">
             <div className="mb-6 flex items-center justify-between">
-                <span className="text-4xl font-bold tracking-tight text-emerald-100 dark:text-emerald-950">
+                <span className="text-4xl font-bold tracking-tight text-muted-foreground/40">
                     {step.number}
                 </span>
 
-                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 transition-colors group-hover:bg-emerald-500 group-hover:text-white dark:bg-emerald-950/50 dark:text-emerald-400">
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 transition-colors group-hover:bg-emerald-500 group-hover:text-primary-foreground dark:bg-emerald-950/50 dark:text-emerald-400">
                     <Icon size={23} />
                 </div>
             </div>
@@ -186,7 +186,7 @@ function StepCard({
 
 export default function HowItWorksPage() {
     return (
-        <main className="overflow-hidden bg-white text-slate-900 dark:bg-slate-950 dark:text-white">
+        <main className="overflow-hidden bg-background text-foreground">
 
             {/* Hero Section */}
             <section className="relative isolate overflow-hidden border-b border-slate-200 bg-slate-50 dark:border-slate-800 dark:bg-slate-900/50">
@@ -423,12 +423,12 @@ export default function HowItWorksPage() {
 
             {/* Final CTA */}
             <section className="relative isolate overflow-hidden px-5 py-20 sm:px-8 lg:py-24">
-                <div className="absolute inset-0 -z-10 bg-emerald-600" />
-                <div className="absolute -right-20 -top-32 -z-10 h-80 w-80 rounded-full bg-white/10 blur-3xl" />
-                <div className="absolute -bottom-40 -left-20 -z-10 h-80 w-80 rounded-full bg-black/10 blur-3xl" />
+                <div className="absolute inset-0 -z-10 bg-primary" />
+                <div className="absolute -right-20 -top-32 -z-10 h-80 w-80 rounded-full bg-foreground/10 blur-3xl" />
+                <div className="absolute -bottom-40 -left-20 -z-10 h-80 w-80 rounded-full bg-foreground/10 blur-3xl" />
 
-                <div className="mx-auto max-w-3xl text-center text-white">
-                    <div className="mx-auto mb-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-white/15">
+                <div className="mx-auto max-w-3xl text-center text-primary-foreground">
+                    <div className="mx-auto mb-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-foreground/10">
                         <BookMarked size={28} />
                     </div>
 
@@ -436,7 +436,7 @@ export default function HowItWorksPage() {
                         Your Next Step Starts Here
                     </h2>
 
-                    <p className="mx-auto mt-5 max-w-2xl leading-8 text-emerald-50">
+                    <p className="mx-auto mt-5 max-w-2xl leading-8 text-primary-foreground/80">
                         Whether you are looking for the right learning
                         opportunity or the right student, MentorLagbe
                         is here to help you connect and grow together.
@@ -445,7 +445,7 @@ export default function HowItWorksPage() {
                     <div className="mt-9 flex flex-col justify-center gap-4 sm:flex-row">
                         <Link
                             href="/tuitions"
-                            className="inline-flex items-center justify-center gap-2 rounded-xl bg-white px-7 py-3.5 text-sm font-semibold text-emerald-700 transition-colors hover:bg-emerald-50"
+                            className="inline-flex items-center justify-center gap-2 rounded-xl bg-card px-7 py-3.5 text-sm font-semibold text-foreground transition-colors hover:bg-muted"
                         >
                             Find Opportunities
                             <ArrowRight size={18} />
@@ -453,7 +453,7 @@ export default function HowItWorksPage() {
 
                         <Link
                             href="/signup"
-                            className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/40 bg-white/10 px-7 py-3.5 text-sm font-semibold text-white transition-colors hover:bg-white/20"
+                            className="inline-flex items-center justify-center gap-2 rounded-xl border border-primary-foreground/30 bg-transparent px-7 py-3.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary-hover"
                         >
                             Join MentorLagbe
                             <UserPlus size={18} />
