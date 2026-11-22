@@ -1,11 +1,8 @@
-import React from 'react';
+import UpdateProfileForm from "@/components/dashboard/shared/UpdateProfileForm";
 
+// Admin "Update Profile" page (shared form with student/tutor pages).
 const UpdateProfilePage = () => {
-    return (
-        <div>
-            Update profile page
-        </div>
-    );
+    return <UpdateProfileForm />;
 };
 
 export default UpdateProfilePage;

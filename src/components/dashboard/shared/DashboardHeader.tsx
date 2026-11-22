@@ -111,7 +111,7 @@ export default function DashboardHeader() {
         : "/login";
 
     const profileHref = userRole
-        ? `/${userRole}/profile`
+        ? `/dashboard/${userRole}/profile`
         : "/login";
 
     // Better Auth sign out

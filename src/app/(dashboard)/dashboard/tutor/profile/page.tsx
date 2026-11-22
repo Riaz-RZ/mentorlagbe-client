@@ -1,10 +1,8 @@
+import UpdateProfileForm from "@/components/dashboard/shared/UpdateProfileForm";
 
+// Tutor "Update Profile" page (shared form with the student page).
 const UpdateProfilePage = () => {
-    return (
-        <div>
-            Update Profile Page
-        </div>
-    );
+    return <UpdateProfileForm />;
 };
 
 export default UpdateProfilePage;

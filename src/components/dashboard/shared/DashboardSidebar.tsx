@@ -79,7 +79,7 @@ const navigationItems: Record<UserRole, NavGroup[]> = {
             items: [
                 {
                     title: "Update Profile",
-                    href: "/student/profile",
+                    href: "/dashboard/student/profile",
                     icon: UserRoundPen,
                 },
             ],
@@ -122,7 +122,7 @@ const navigationItems: Record<UserRole, NavGroup[]> = {
             items: [
                 {
                     title: "Update Profile",
-                    href: "/tutor/profile",
+                    href: "/dashboard/tutor/profile",
                     icon: UserRoundPen,
                 },
             ],
@@ -165,7 +165,7 @@ const navigationItems: Record<UserRole, NavGroup[]> = {
             items: [
                 {
                     title: "Update Profile",
-                    href: "/admin/profile",
+                    href: "/dashboard/admin/profile",
                     icon: UserRoundPen,
                 },
             ],

@@ -57,7 +57,7 @@ const getDashboardRoute = (role: UserRole) => {
 };
 
 const getProfileRoute = (role: UserRole) => {
-  return `/${role}/profile`;
+  return `/dashboard/${role}/profile`;
 };
 
 // Generate user initials
