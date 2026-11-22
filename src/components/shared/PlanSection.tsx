@@ -18,6 +18,12 @@ const proFeatures = [
     "Priority listing in search & category filters",
     "Priority applicant notifications & reviews",
 ];
+const freeFeatures = [
+    "Up to 2 tuition posts(Tutor)",
+    "Up to 5 tuition Bookmark(Student)",
+    "Direct Tuition Application",
+    "Basic profile & search filters",
+];
 
 // =============================================================
 // "Choose Your Plan" pricing section on the homepage, right
@@ -125,15 +131,20 @@ const PlanSection = () => {
                         </span>
                     </p>
 
-                    {/* Dashboard preview placeholder */}
-                    <div className="mt-4 flex aspect-16/10 flex-col items-center justify-center gap-3 rounded-xl border border-slate-200 bg-slate-100 dark:border-slate-800 dark:bg-slate-800/60">
-                        <Monitor className="size-10 text-slate-400" />
-                        <div className="w-2/3 space-y-1.5">
-                            <div className="h-2 w-full rounded bg-slate-300 dark:bg-slate-700" />
-                            <div className="h-2 w-5/6 rounded bg-slate-300 dark:bg-slate-700" />
-                            <div className="h-2 w-2/3 rounded bg-slate-300 dark:bg-slate-700" />
-                        </div>
-                    </div>
+                    {/* Free perks */}
+                    <ul className="mt-5 space-y-3">
+                        {freeFeatures.map((feature) => (
+                            <li
+                                key={feature}
+                                className="flex items-start gap-2.5 text-sm text-slate-700 dark:text-slate-300"
+                            >
+                                <span className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-600 dark:bg-emerald-950 dark:text-emerald-400">
+                                    <Check className="size-3" />
+                                </span>
+                                {feature}
+                            </li>
+                        ))}
+                    </ul>
 
                     <Button
                         onClick={handleGetStarted}

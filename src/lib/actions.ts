@@ -25,10 +25,20 @@ async function request(
   const body = await res.json().catch(() => null);
 
   if (!res.ok || !body?.success) {
-    throw new Error(body?.message || "Something went wrong");
+    const error = new Error(body?.message || "Something went wrong") as Error & {
+      status?: number;
+    };
+    error.status = res.status;
+    throw error;
   }
 
   return body.data;
+}
+
+// True when the backend rejected the action because of a plan
+// limit (free plan: 5 bookmarks / 2 posts / 5 applications).
+export function isPlanLimitError(error: unknown): boolean {
+  return error instanceof Error && (error as { status?: number }).status === 403;
 }
 
 // Example: apiPost("/api/tuitions", { title: "Math", ... })

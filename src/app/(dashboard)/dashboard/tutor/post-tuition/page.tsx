@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { Loader2, Send } from "lucide-react";
 
 import { authClient } from "@/lib/auth-client";
-import { apiPost } from "@/lib/actions";
+import { apiPost, isPlanLimitError } from "@/lib/actions";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -102,6 +102,8 @@ const PostTuitionPage = () => {
             toast.error(
                 error instanceof Error ? error.message : "Failed to post tuition."
             );
+            // Free-plan limit (2 posts) -> show the pricing page.
+            if (isPlanLimitError(error)) router.push("/pricing");
         } finally {
             setIsSubmitting(false);
         }

@@ -21,7 +21,7 @@ import {
 } from "lucide-react";
 
 import { apiGet } from "@/lib/api";
-import { apiPost } from "@/lib/actions";
+import { apiPost, isPlanLimitError } from "@/lib/actions";
 import { authClient } from "@/lib/auth-client";
 
 import { Badge } from "@/components/ui/badge";
@@ -476,6 +476,7 @@ function ApplyDialog({
     open: boolean;
     onOpenChange: (open: boolean) => void;
 }) {
+    const router = useRouter();
     const { data: session } = authClient.useSession();
 
     const [phone, setPhone] = useState("");
@@ -518,6 +519,11 @@ function ApplyDialog({
                     ? error.message
                     : "Failed to submit application."
             );
+            // Free-plan limit (5 applications) -> show the pricing page.
+            if (isPlanLimitError(error)) {
+                onOpenChange(false);
+                router.push("/pricing");
+            }
         } finally {
             setIsSubmitting(false);
         }

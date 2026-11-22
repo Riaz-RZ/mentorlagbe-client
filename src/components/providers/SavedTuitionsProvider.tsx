@@ -6,11 +6,12 @@ import {
     useEffect,
     useState,
 } from "react";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
 import { authClient } from "@/lib/auth-client";
 import { apiGet } from "@/lib/api";
-import { apiPost, apiDelete } from "@/lib/actions";
+import { apiPost, apiDelete, isPlanLimitError } from "@/lib/actions";
 
 // Only the fields the bookmark needs.
 interface SavedTuition {
@@ -37,6 +38,7 @@ export function SavedTuitionsProvider({
 }: {
     children: React.ReactNode;
 }) {
+    const router = useRouter();
     const { data: session, isPending } = authClient.useSession();
 
     // Saved ids + the email they were loaded for (null = nothing loaded).
@@ -125,6 +127,8 @@ export function SavedTuitionsProvider({
             toast.error(
                 error instanceof Error ? error.message : "Something went wrong"
             );
+            // Free-plan limit (5 bookmarks) -> show the pricing page.
+            if (isPlanLimitError(error)) router.push("/pricing");
         }
     };
 
