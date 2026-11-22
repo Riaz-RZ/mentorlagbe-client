@@ -177,7 +177,7 @@ export default function Navbar() {
             <Link
               key={link.href}
               href={link.href}
-              className={`text-sm font-medium transition-colors ${
+              className={`text-sm font-semibold tracking-wide transition-colors ${
                 isActive(link.href)
                   ? "text-blue-600 dark:text-sky-400"
                   : "text-slate-600 hover:text-blue-600 dark:text-slate-300 dark:hover:text-sky-400"
@@ -196,13 +196,22 @@ export default function Navbar() {
             <div className="h-9 w-28 animate-pulse rounded-md bg-slate-200 dark:bg-slate-800" />
           ) : !user ? (
             <>
-              <Link href="/login" className={buttonVariants({ variant: "ghost" })}>
+              <Link
+                href="/login"
+                className={buttonVariants({
+                  variant: "ghost",
+                  className: "font-semibold tracking-wide",
+                })}
+              >
                 Log in
               </Link>
 
               <Link
                 href="/signup"
-                className={buttonVariants({ className: "bg-blue-600 text-white hover:bg-blue-700" })}
+                className={buttonVariants({
+                  className:
+                    "bg-blue-600 font-semibold tracking-wide text-white hover:bg-blue-700",
+                })}
               >
                 Sign Up
               </Link>
@@ -353,7 +362,7 @@ export default function Navbar() {
                   key={link.href}
                   href={link.href}
                   onClick={closeMobileMenu}
-                  className={`rounded-lg px-3 py-3 text-sm font-medium transition-colors ${
+                  className={`rounded-lg px-3 py-3 text-sm font-semibold tracking-wide transition-colors ${
                     isActive(link.href)
                       ? "bg-blue-50 text-blue-600 dark:bg-blue-950 dark:text-sky-400"
                       : "text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-900"
@@ -382,7 +391,10 @@ export default function Navbar() {
                   <Link
                     href="/login"
                     onClick={closeMobileMenu}
-                    className={buttonVariants({ variant: "outline" })}
+                    className={buttonVariants({
+                      variant: "outline",
+                      className: "font-semibold tracking-wide",
+                    })}
                   >
                     Sign In
                   </Link>
@@ -390,7 +402,10 @@ export default function Navbar() {
                   <Link
                     href="/register"
                     onClick={closeMobileMenu}
-                    className={buttonVariants({ className: "bg-blue-600 text-white hover:bg-blue-700" })}
+                    className={buttonVariants({
+                      className:
+                        "bg-blue-600 font-semibold tracking-wide text-white hover:bg-blue-700",
+                    })}
                   >
                     Sign Up
                   </Link>

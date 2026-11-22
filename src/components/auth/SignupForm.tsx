@@ -4,6 +4,7 @@
 import { useState, type FormEvent, type ChangeEvent } from "react";
 import Link from "next/link";
 import {
+    ArrowLeft,
     Eye,
     EyeOff,
     Mail,
@@ -28,6 +29,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { signUp } from "@/lib/auth-client";
 import Image from "next/image";
+import GoogleMark from "@/components/auth/GoogleMark";
 
 type UserRole = "student" | "tutor";
 
@@ -107,32 +109,39 @@ export default function SignupForm() {
     };
 
     return (
-        <Card className="border-slate-200/80 shadow-xl shadow-slate-200/50 dark:border-slate-800 dark:bg-slate-900 dark:shadow-none">
-            <CardHeader className="space-y-2">
-                <CardTitle className="text-2xl font-bold tracking-tight sm:text-3xl">
+        <Card className="gap-1 border-slate-200/80 py-2 shadow-xl shadow-slate-200/50 dark:border-slate-800 dark:bg-slate-900 dark:shadow-none lg:gap-2 lg:py-3">
+            <CardHeader className="relative lg:px-8">
+                <CardTitle className="text-lg font-bold tracking-tight sm:text-xl lg:text-2xl">
                     Create your account
                 </CardTitle>
+                <Link
+                    href="/"
+                    className="absolute right-8 top-1/2 hidden -translate-y-1/2 items-center gap-1 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground lg:inline-flex"
+                >
+                    <ArrowLeft className="size-4" />
+                    Back to Home
+                </Link>
             </CardHeader>
 
-            <CardContent>
-                <form onSubmit={handleSubmit} className="space-y-5">
+            <CardContent className="pb-1 lg:px-8 lg:pb-2">
+                <form onSubmit={handleSubmit} className="space-y-2 lg:space-y-3">
 
                     {/* Role Selection */}
-                    <div className="space-y-3">
+                    <div className="space-y-1 lg:space-y-2">
                         <Label>I want to join as a</Label>
 
-                        <div className="grid grid-cols-2 gap-3">
+                        <div className="grid grid-cols-2 gap-2">
                             <button
                                 type="button"
                                 onClick={() => setRole("student")}
                                 aria-pressed={role === "student"}
-                                className={`flex items-center gap-3 rounded-xl border p-3 text-left transition-all ${role === "student"
+                                className={`flex items-center gap-2 rounded-xl border p-2 text-left transition-all ${role === "student"
                                     ? "border-blue-500 bg-blue-50 ring-2 ring-blue-500/20 dark:bg-blue-950/50"
                                     : "border-slate-200 hover:border-blue-300 dark:border-slate-700"
                                     }`}
                             >
                                 <div
-                                    className={`flex size-10 shrink-0 items-center justify-center rounded-lg ${role === "student"
+                                    className={`flex size-8 shrink-0 items-center justify-center rounded-lg ${role === "student"
                                         ? "bg-blue-600 text-white"
                                         : "bg-slate-100 text-slate-500 dark:bg-slate-800"
                                         }`}
@@ -152,13 +161,13 @@ export default function SignupForm() {
                                 type="button"
                                 onClick={() => setRole("tutor")}
                                 aria-pressed={role === "tutor"}
-                                className={`flex items-center gap-3 rounded-xl border p-3 text-left transition-all ${role === "tutor"
+                                className={`flex items-center gap-2 rounded-xl border p-2 text-left transition-all ${role === "tutor"
                                     ? "border-blue-500 bg-blue-50 ring-2 ring-blue-500/20 dark:bg-blue-950/50"
                                     : "border-slate-200 hover:border-blue-300 dark:border-slate-700"
                                     }`}
                             >
                                 <div
-                                    className={`flex size-10 shrink-0 items-center justify-center rounded-lg ${role === "tutor"
+                                    className={`flex size-8 shrink-0 items-center justify-center rounded-lg ${role === "tutor"
                                         ? "bg-blue-600 text-white"
                                         : "bg-slate-100 text-slate-500 dark:bg-slate-800"
                                         }`}
@@ -177,7 +186,7 @@ export default function SignupForm() {
                     </div>
 
                     {/* Full Name */}
-                    <div className="space-y-2">
+                    <div className="space-y-0 lg:space-y-1">
                         <Label htmlFor="name">Full Name</Label>
 
                         <div className="relative">
@@ -190,7 +199,7 @@ export default function SignupForm() {
                                 placeholder="Enter your full name"
                                 value={formData.name}
                                 onChange={handleChange}
-                                className="h-12 pl-10"
+                                className="h-9 pl-10 lg:h-10"
                                 autoComplete="name"
                                 required
                             />
@@ -198,7 +207,7 @@ export default function SignupForm() {
                     </div>
 
                     {/* Email */}
-                    <div className="space-y-2">
+                    <div className="space-y-0 lg:space-y-1">
                         <Label htmlFor="email">Email Address</Label>
 
                         <div className="relative">
@@ -211,14 +220,14 @@ export default function SignupForm() {
                                 placeholder="you@example.com"
                                 value={formData.email}
                                 onChange={handleChange}
-                                className="h-12 pl-10"
+                                className="h-9 pl-10 lg:h-10"
                                 autoComplete="email"
                                 required
                             />
                         </div>
                     </div>
                     {/* Profile Image */}
-                    <div className="space-y-2">
+                    <div className="space-y-0 lg:space-y-1">
                         <Label htmlFor="image">Profile Image URL (Optional)</Label>
 
                         <div className="relative">
@@ -231,7 +240,7 @@ export default function SignupForm() {
                                 placeholder="https://example.com/profile.jpg"
                                 value={formData.image}
                                 onChange={handleChange}
-                                className="h-12 pl-10"
+                                className="h-9 pl-10 lg:h-10"
                             />
                         </div>
 
@@ -252,7 +261,7 @@ export default function SignupForm() {
                     </div>
 
                     {/* Password */}
-                    <div className="space-y-2">
+                    <div className="space-y-0 lg:space-y-1">
                         <Label htmlFor="password">Password</Label>
 
                         <div className="relative">
@@ -265,7 +274,7 @@ export default function SignupForm() {
                                 placeholder="Create a password"
                                 value={formData.password}
                                 onChange={handleChange}
-                                className="h-12 pl-10 pr-11"
+                                className="h-9 pl-10 pr-11 lg:h-10"
                                 autoComplete="new-password"
                                 minLength={8}
                                 required
@@ -291,7 +300,7 @@ export default function SignupForm() {
                     </div>
 
                     {/* Confirm Password */}
-                    <div className="space-y-2">
+                    <div className="space-y-0 lg:space-y-1">
                         <Label htmlFor="confirmPassword">Confirm Password</Label>
 
                         <div className="relative">
@@ -304,7 +313,7 @@ export default function SignupForm() {
                                 placeholder="Confirm your password"
                                 value={formData.confirmPassword}
                                 onChange={handleChange}
-                                className="h-12 pl-10 pr-11"
+                                className="h-9 pl-10 pr-11 lg:h-10"
                                 autoComplete="new-password"
                                 required
                             />
@@ -366,7 +375,7 @@ export default function SignupForm() {
                     <Button
                         type="submit"
                         disabled={isSubmitting}
-                        className="h-12 w-full bg-blue-600 text-base font-semibold text-white shadow-lg shadow-blue-600/20 transition-all hover:bg-blue-700"
+                        className="h-9 w-full bg-blue-600 text-sm font-semibold tracking-wide text-white shadow-lg shadow-blue-600/20 transition-all hover:bg-blue-700 lg:h-10 lg:text-base"
                     >
                         {isSubmitting ? (
                             "Creating account..."
@@ -380,7 +389,7 @@ export default function SignupForm() {
                 </form>
 
                 {/* Divider */}
-                <div className="my-6 flex items-center gap-4">
+                <div className="my-2 flex items-center gap-4 lg:my-4">
                     <Separator className="flex-1" />
                     <span className="text-xs text-muted-foreground">
                         OR CONTINUE WITH
@@ -392,19 +401,17 @@ export default function SignupForm() {
                 <Button
                     type="button"
                     variant="outline"
-                    className="h-12 w-full"
+                    className="h-9 w-full font-semibold tracking-wide lg:h-10"
                     onClick={() =>
                         toast.info("Google sign-up will be available soon.")
                     }
                 >
-                    <span className="mr-2 flex size-5 items-center justify-center rounded-full border text-sm font-bold">
-                        G
-                    </span>
+                    <GoogleMark />
                     Sign up with Google
                 </Button>
 
                 {/* Login Link */}
-                <p className="mt-7 text-center text-sm text-muted-foreground">
+                <p className="mt-2 text-center text-sm text-muted-foreground lg:mt-4">
                     Already have an account?{" "}
                     <Link
                         href="/login"

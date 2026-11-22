@@ -28,6 +28,7 @@ import {
     CardTitle,
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import GoogleMark from "@/components/auth/GoogleMark";
 
 export default function LoginForm() {
     const router = useRouter();
@@ -213,7 +214,7 @@ export default function LoginForm() {
                     <Button
                         type="submit"
                         disabled={isSubmitting}
-                        className="h-12 w-full bg-blue-600 text-base font-semibold text-white shadow-lg shadow-blue-600/20 transition hover:bg-blue-700"
+                        className="h-12 w-full bg-blue-600 text-base font-semibold tracking-wide text-white shadow-lg shadow-blue-600/20 transition hover:bg-blue-700"
                     >
                         {isSubmitting ? (
                             <>
@@ -246,11 +247,9 @@ export default function LoginForm() {
                     type="button"
                     variant="outline"
                     onClick={handleGoogleLogin}
-                    className="h-12 w-full border-slate-200 font-medium hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800"
+                    className="h-12 w-full border-slate-200 font-semibold tracking-wide hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800"
                 >
-                    <span className="mr-2 text-lg font-bold text-blue-600">
-                        G
-                    </span>
+                    <GoogleMark />
                     Continue with Google
                 </Button>
 
