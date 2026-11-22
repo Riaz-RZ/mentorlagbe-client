@@ -130,7 +130,7 @@ const TuitionDetailsPage = () => {
     // Loading skeleton
     if (isLoading) {
         return (
-            <main className="mx-auto max-w-6xl space-y-6 px-4 py-8 lg:px-8">
+            <main className="mx-auto w-full max-w-6xl space-y-6 px-4 py-8 sm:px-6 lg:px-8">
                 <Skeleton className="h-6 w-44" />
                 <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
                     <div className="space-y-4 lg:col-span-2">
@@ -147,7 +147,7 @@ const TuitionDetailsPage = () => {
     // Tuition not found (bad id, or not approved / not active)
     if (!tuition) {
         return (
-            <main className="mx-auto max-w-6xl px-4 py-16 text-center lg:px-8">
+            <main className="mx-auto w-full max-w-6xl px-4 py-16 text-center sm:px-6 lg:px-8">
                 <p className="text-sm text-slate-500 dark:text-slate-400">
                     This tuition is not available.
                 </p>
@@ -169,7 +169,7 @@ const TuitionDetailsPage = () => {
     });
 
     return (
-        <main className="mx-auto max-w-6xl px-4 py-6 lg:px-8">
+        <main className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 lg:px-8">
             {/* Back link */}
             <Link
                 href="/tuitions"
