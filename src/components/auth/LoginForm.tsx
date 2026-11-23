@@ -95,10 +95,15 @@ export default function LoginForm() {
 
     const handleGoogleLogin = async () => {
         try {
-            await authClient.signIn.social({
+            const { error } = await authClient.signIn.social({
                 provider: "google",
-                callbackURL: "/",
+                callbackURL: "/auth/callback",
+                newUserCallbackURL: "/auth/callback",
             });
+
+            if (error) {
+                toast.error(error.message || "Google sign-in failed. Please try again.");
+            }
         } catch {
             toast.error("Google sign-in failed. Please try again.");
         }
