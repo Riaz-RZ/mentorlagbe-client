@@ -278,7 +278,7 @@ where `application.studentEmail === req.user.email` and saved tuitions where
 | location       | string | shown for offline mode (server does not require it) |
 | monthlyFee     | number | required                                 |
 | daysPerWeek    | number | required                                 |
-| bannerImage    | string | pasted image URL (any host; no upload field) |
+| bannerImage    | string | public URL returned by the tutor's direct IMGBB banner upload |
 | description    | string | required                                 |
 | tutorName      | string | from request body (⚠️ JWT pending — known issue #9) |
 | tutorEmail     | string | from request body — ownership key (⚠️ JWT pending) |
@@ -390,7 +390,7 @@ Base URL: `http://localhost:5000`.
 |               | `GET /api/payments/verify?sessionId=`          | payer (⚠️ public) | ✅ records payment + flips `plan` (idempotent) |
 |               | `GET /api/payments`                            | admin (⚠️ public) | ✅ (empty until a real checkout happens) |
 |               | `POST /api/payments/webhook`                   | Stripe          | ❌ **not used** — verify-based flow instead (see 7.4) |
-| **upload**    | IMGBB from the browser (D4)                    | —               | ✅ `src/lib/imgbb.ts` — used for the **profile photo only**; tuition banner is a pasted URL input |
+| **upload**    | IMGBB from the browser (D4)                    | —               | ✅ `src/lib/imgbb.ts` — used for profile photos and tuition banners |
 
 ## 9. Environment Variables
 
@@ -401,7 +401,7 @@ BETTER_AUTH_SECRET=...            # Better Auth signing secret
 BETTER_AUTH_URL=http://localhost:3000
 DB_URI=mongodb+srv://...          # same Atlas cluster, db: mentorlagbe
 NEXT_PUBLIC_API_URL=http://localhost:5000   # ✅ used by api.ts / actions.ts
-NEXT_PUBLIC_IMGBB_API_KEY=...              # ✅ profile photo upload (D4)
+NEXT_PUBLIC_IMGBB_API_KEY=...              # ✅ profile photo + tuition banner uploads (D4)
 NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=...     # present but UNUSED (no stripe.js)
 STRIPE_SECRET_KEY=...             # present but only the dead sample
                                    # checkout_sessions route reads it
@@ -456,8 +456,9 @@ Notes:
 - **Student**: overview (stats + quick actions), My Applications (status
   badges, refresh), Saved Tuitions (bookmark grid), profile page
   (name/photo via IMGBB + change password).
-- **Tutor**: overview, Post a Tuition (form → POST → redirect, plan-limit
-  CTA), My Tuitions (table + View/Edit/Delete dialogs + `isActive` switch),
+- **Tutor**: overview, Post a Tuition (form + direct IMGBB banner upload →
+  POST → redirect, plan-limit CTA), My Tuitions (table + View/Edit/Delete
+  dialogs + `isActive` switch),
   Applicants (accept/reject with toasts), profile page.
 - **Admin**: overview (`GET /api/users/stats`: users/tutors/students/pending/
   revenue), Tuitions moderation (Pending/Approved/Rejected/All tabs +
@@ -628,7 +629,7 @@ Notes:
   `https://api.imgbb.com/1/upload` using `NEXT_PUBLIC_IMGBB_API_KEY`; only the
   returned URL is stored in MongoDB. (Alternative: a backend proxy — skip it,
   no benefit for an assignment.) Implemented in `src/lib/imgbb.ts` and used
-  for the **profile photo**; the tuition banner is a plain pasted URL.
+  for profile photos and tutor tuition banners.
   `next.config.ts` now allows **all http/https image hosts**, so no
   per-host `remotePatterns` entry is needed anymore.
 - **D5 — No new frontend libraries.** Stripe checkout = backend creates the
@@ -723,7 +724,8 @@ Notes:
 *Last updated: 2026-11-23 — full project re-read and AGENTS.md brought in
 line with the actual code: tuitions/applications/saved/payments APIs and all
 dashboard pages are implemented, custom loading and error routes are added,
-Stripe runs on a verify endpoint (no webhook, D8), plan limits (2 posts / 5
-bookmarks / 5 applications) are enforced, and the remaining gaps are JWT
-middleware (Phase 0), route protection, admin user management, and cleanup
-(see sections 10–14).*
+IMGBB uploads cover profile photos and tuition banners, Stripe runs on a
+verify endpoint (no webhook, D8), plan limits (2 posts / 5 bookmarks / 5
+applications) are enforced, and the remaining gaps are JWT middleware
+(Phase 0), route protection, admin user management, and cleanup (see sections
+10–14).*

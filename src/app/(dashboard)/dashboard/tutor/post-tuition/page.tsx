@@ -1,12 +1,14 @@
 "use client";
 
-import { useState, type FormEvent, type ChangeEvent } from "react";
+import Image from "next/image";
+import { useRef, useState, type FormEvent, type ChangeEvent } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { FilePlus2, Loader2, Send } from "lucide-react";
+import { FilePlus2, ImagePlus, Loader2, Send } from "lucide-react";
 
 import { authClient } from "@/lib/auth-client";
 import { apiPost, isPlanLimitError } from "@/lib/actions";
+import { uploadToIMGBB } from "@/lib/imgbb";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -46,6 +48,8 @@ const PostTuitionPage = () => {
 
     const [formData, setFormData] = useState(initialForm);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isUploadingBanner, setIsUploadingBanner] = useState(false);
+    const bannerFileRef = useRef<HTMLInputElement>(null);
 
     const handleChange = (
         e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -54,8 +58,46 @@ const PostTuitionPage = () => {
         setFormData((prev) => ({ ...prev, [name]: value }));
     };
 
+    const handleBannerImageChange = async (
+        e: ChangeEvent<HTMLInputElement>
+    ) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        if (!["image/jpeg", "image/png"].includes(file.type)) {
+            toast.error("Choose a JPG or PNG image.");
+            e.target.value = "";
+            return;
+        }
+
+        if (file.size > 5 * 1024 * 1024) {
+            toast.error("The banner image must be 5 MB or smaller.");
+            e.target.value = "";
+            return;
+        }
+
+        setIsUploadingBanner(true);
+        try {
+            const url = await uploadToIMGBB(file);
+            setFormData((prev) => ({ ...prev, bannerImage: url }));
+            toast.success("Banner image uploaded.");
+        } catch (error) {
+            toast.error(
+                error instanceof Error ? error.message : "Image upload failed."
+            );
+        } finally {
+            setIsUploadingBanner(false);
+            e.target.value = "";
+        }
+    };
+
     const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault();
+
+        if (isUploadingBanner) {
+            toast.error("Please wait for the banner image upload to finish.");
+            return;
+        }
 
         // Same required fields the backend validates
         if (
@@ -246,16 +288,55 @@ const PostTuitionPage = () => {
                             </div>
                         </div>
 
-                        {/* Banner image URL (IMGBB upload comes in a later phase) */}
+                        {/* Banner image upload */}
                         <div className="space-y-2">
-                            <Label htmlFor="bannerImage">Banner Image URL</Label>
-                            <Input
+                            <Label htmlFor="bannerImage">Banner Image</Label>
+                            <input
+                                ref={bannerFileRef}
                                 id="bannerImage"
-                                name="bannerImage"
-                                placeholder="https://i.ibb.co/..."
-                                value={formData.bannerImage}
-                                onChange={handleChange}
+                                type="file"
+                                accept="image/jpeg,image/png"
+                                className="hidden"
+                                onChange={handleBannerImageChange}
                             />
+                            <div className="flex flex-wrap items-center gap-3">
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    disabled={isUploadingBanner || isSubmitting}
+                                    onClick={() => bannerFileRef.current?.click()}
+                                >
+                                    {isUploadingBanner ? (
+                                        <Loader2 className="size-4 animate-spin" />
+                                    ) : (
+                                        <ImagePlus className="size-4" />
+                                    )}
+                                    {isUploadingBanner
+                                        ? "Uploading..."
+                                        : formData.bannerImage
+                                          ? "Replace Banner Image"
+                                          : "Upload Banner Image"}
+                                </Button>
+                                <p className="text-xs text-muted-foreground">
+                                    JPG or PNG, max 5 MB.
+                                </p>
+                            </div>
+                            {formData.bannerImage && (
+                                <div className="space-y-2 pt-2">
+                                    <div className="relative aspect-video max-w-lg overflow-hidden rounded-xl border border-border">
+                                        <Image
+                                            src={formData.bannerImage}
+                                            alt="Tuition banner preview"
+                                            fill
+                                            sizes="(max-width: 768px) 100vw, 512px"
+                                            className="object-cover"
+                                        />
+                                    </div>
+                                    <p className="text-xs text-muted-foreground">
+                                        Banner image uploaded and ready to submit.
+                                    </p>
+                                </div>
+                            )}
                         </div>
 
                         {/* Description */}
@@ -276,12 +357,15 @@ const PostTuitionPage = () => {
                                 type="button"
                                 variant="outline"
                                 onClick={() => setFormData(initialForm)}
-                                disabled={isSubmitting}
+                                disabled={isSubmitting || isUploadingBanner}
                             >
                                 Reset
                             </Button>
 
-                            <Button type="submit" disabled={isSubmitting}>
+                            <Button
+                                type="submit"
+                                disabled={isSubmitting || isUploadingBanner}
+                            >
                                 {isSubmitting ? (
                                     <>
                                         <Loader2 className="size-4 animate-spin" />
