@@ -22,8 +22,10 @@ MentorLagbe is a tuition/mentorship marketplace assignment project (Programming 
 
 - **Students** search & filter approved tuition posts and apply for sessions.
 - **Tutors** post tuition listings (with an IMGBB banner image) and manage incoming applications.
-- **Admins** approve/reject tuition posts, manage user roles, and track Stripe revenue.
-- **Pro plan**: both tutors and students can upgrade to a paid "pro" plan through Stripe.
+- **Admins** approve/reject tuition posts and track Stripe revenue (user-role
+  management is planned but not built yet).
+- **Pro plan**: both tutors and students can upgrade to a paid "pro" plan through Stripe
+  (one-time: $15 tutor / $10 student, verified via `/payment/success`).
 
 Design rules for this project (non-negotiable):
 
@@ -69,19 +71,30 @@ All Assignments Answers/
 | Toasts          | sonner                                            |
 | Theme           | next-themes (`ThemeProvider`, `ThemeToggle`)      |
 | State           | React hooks only — no Redux/Zustand               |
-| Data fetching   | **None yet** (no `fetch` calls exist anywhere)    |
+| Data fetching   | plain `fetch` via `src/lib/api.ts` + `src/lib/actions.ts` (no data-fetching library) |
+| Payments        | `stripe` server SDK (`src/lib/stripe.ts`) — no stripe.js / no `@stripe/stripe-js` usage |
 | Dev port        | `http://localhost:3000`                           |
 
 Key frontend files:
 
-- `src/lib/auth.ts` — Better Auth **server** config (MongoDB adapter, `role` additional field).
+- `src/lib/auth.ts` — Better Auth **server** config (MongoDB adapter, `role` + `plan` additional fields; **no `jwt()` plugin yet**).
 - `src/lib/auth-client.ts` — Better Auth **client** (`authClient`, `signIn`, `signUp`, `useSession`).
+- `src/lib/api.ts` — `apiGet<T>(path)` for GET requests (parses `{ success, message, data }`, throws `message`).
+- `src/lib/actions.ts` — `apiPost` / `apiPatch` / `apiDelete` + `isPlanLimitError()` (detects 403 plan-limit messages to show an upgrade CTA).
+- `src/lib/imgbb.ts` — `uploadToIMGBB(file)` → posts to `api.imgbb.com`, returns the public URL (D4).
+- `src/lib/stripe.ts` — `server-only` Stripe SDK instance (used only by the sample `checkout_sessions` route).
 - `src/app/api/auth/[...all]/route.ts` — Better Auth HTTP handler (all auth endpoints live under `/api/auth/*`).
+- `src/app/api/checkout_sessions/route.ts` — **dead sample** Stripe route (hard-coded price ID, not called by any page — see known issues).
 - `src/components/auth/LoginForm.tsx`, `SignupForm.tsx` — wired to Better Auth (email/password + Google button).
-- `src/app/(dashboard)/layout.tsx` — dashboard shell (sidebar + header).
+- `src/app/(root)/page.tsx` — homepage: `Hero` + `TrustStrip` + `FeaturedTuitions` + `PlanSection`.
+- `src/app/(root)/tuitions/page.tsx` — browse page (client-side search/subject/class/mode/fee filters), `tuitions/[id]` — detail page + apply dialog.
+- `src/app/(root)/pricing/page.tsx`, `how-it-works/page.tsx`, `payment/success/page.tsx` — pricing (PlanSection), static how-it-works, Stripe verify page.
+- `src/app/(dashboard)/layout.tsx` — dashboard shell (sidebar + header). **No route guard yet.**
 - `src/components/dashboard/shared/DashboardSidebar.tsx` — role-aware nav (student/tutor/admin), sign-out.
 - `src/components/dashboard/shared/DashboardHeader.tsx` — page title, search, notifications, user dropdown.
-- `src/app/(root)/page.tsx` — public homepage (currently a placeholder).
+- `src/components/dashboard/shared/DashboardPageHeader.tsx`, `OverviewCards.tsx` — shared page banner (`StatCard` / `ActionRow`) used by all dashboard pages.
+- `src/components/providers/SavedTuitionsProvider.tsx` — global bookmark state (ids + `toggleSave`) for `TuitionCard` / saved page.
+- `src/components/shared/PlanSection.tsx` — Free vs Pro pricing; "Upgrade to Pro" → `POST /api/payments/checkout` → `window.location.href = url`.
 
 ### Backend stack (`mentorlagbe-server`)
 
@@ -90,7 +103,7 @@ Key frontend files:
 | Runtime         | Node.js, ESM (`"type": "module"`)                  |
 | Framework       | Express **5.3**                                    |
 | Database        | MongoDB Atlas via official `mongodb` driver **7**  |
-| Auth            | JWT issued by Better Auth, verified by Express     |
+| Auth            | Better Auth JWT — **planned**, Express does not verify it yet (Phase 0) |
 | Entry file      | `src/server.js` (`src/app.js` holds the app)       |
 | Scripts         | `npm start` / `npm run dev` (node --watch)         |
 | Port            | `process.env.PORT \|\| 5000`                       |
@@ -103,70 +116,92 @@ mentorlagbe-server/
 ├── index.js                  # thin wrapper -> imports src/server.js (compat)
 ├── src/
 │   ├── config/
-│   │   └── db.js              # connectToMongoDB() + getDb()
+│   │   └── db.js              # connectToMongoDB() + getDb() + 5 collection refs
 │   ├── middleware/
 │   │   ├── notFound.js        # 404 handler for unknown routes
 │   │   └── errorHandler.js    # global error handler (always last)
 │   ├── routes/
-│   │   ├── healthRoutes.js    # GET /api/health (implemented)
-│   │   ├── users.js           # stub + sample GET /api/users (ApiResponse)
-│   │   ├── tuitions.js        # stub: planned Phase 2 endpoints (comments only)
-│   │   └── applications.js    # stub: planned Phase 3 endpoints (comments only)
+│   │   ├── healthRoutes.js    # GET /api/health
+│   │   ├── users.js           # GET /api/users/stats (admin), sample GET /api/users
+│   │   ├── tuitions.js        # full tuition CRUD + moderation (implemented)
+│   │   ├── applications.js    # apply / list / accept-reject (implemented)
+│   │   ├── saved.js           # student bookmarks (implemented)
+│   │   └── payments.js        # Stripe checkout + verify + list (implemented)
 │   ├── utils/
 │   │   ├── ApiError.js        # ApiError class (statusCode + message)
-│   │   └── ApiResponse.js     # ApiResponse.success() standard success reply
-│   ├── app.js                 # express app: cors, json, routes, 404, error handler
+│   │   ├── ApiResponse.js     # ApiResponse.success() standard success reply
+│   │   └── plan.js            # getPlan(email) -> "free" | "pro" (plan-limit checks)
+│   ├── app.js                 # express app: cors, json, 5 routes, 404, error handler
 │   └── server.js              # env validation → MongoDB connect → listen
-├── .env                       # DB_URI, PORT, CLIENT_URL (gitignored)
+├── .env                       # DB_URI, PORT, CLIENT_URL, STRIPE_SECRET_KEY (gitignored)
 ├── .env.example               # placeholder values, no secrets
 ├── .gitignore                 # node_modules, .env
-└── package.json               # start/dev scripts
+└── package.json               # start/dev scripts; deps: express, cors, dotenv, mongodb, stripe
 ```
 
 Notes:
 - `index.js` is only a 3-line compatibility wrapper (`import './src/server.js'`)
   so the old filename still works — all real code lives in `src/`.
-- The three routers are **mounted** in `app.js` (`/api/users`, `/api/tuitions`,
-  `/api/applications`). `users.js` has a sample `GET /api/users`; `tuitions.js`
-  and `applications.js` are still comment-only stubs — requests to them
-  correctly return 404 until their phases are implemented.
+- **Five routers are mounted** in `app.js`: `/api/users`, `/api/tuitions`,
+  `/api/applications`, `/api/saved`, `/api/payments`. All of them have real
+  logic (no comment-only stubs left); only `GET /api/users/:email` and
+  `PATCH /api/users/:email/role` from the original plan are missing (profile
+  edits go through Better Auth's `updateUser` on the frontend instead).
+- **No endpoint is behind JWT middleware yet.** Every route currently trusts
+  email/role values from the query string or body (marked with
+  `TODO(Phase 0)` comments in the route files). See section 5 and known
+  issue #9.
 
-Backend foundation status: **basic foundation complete** — Express app,
-dotenv env validation, CORS (`CLIENT_URL`), `express.json()`, MongoDB
-connection (server starts only after DB connects), 404 + global error
-middleware, consistent `{ success, message, data }` response format, and
-`GET /api/health`. Route modules for users/tuitions/applications/payments and
-JWT auth middleware are **not implemented yet** (see roadmap).
+Backend foundation status: **foundation + all planned API modules complete**
+— Express app, dotenv env validation, CORS (`CLIENT_URL`), `express.json()`,
+MongoDB connection (server starts only after DB connects), 404 + global error
+middleware, consistent `{ success, message, data }` response format,
+`GET /api/health`, and working tuitions / applications / saved / payments /
+admin-stats routes. **JWT auth middleware (`verifyToken` / `requireRole`) is
+still not implemented** (see roadmap Phase 0).
 
 ## 4. Authentication Flow (Better Auth — DO NOT REBUILD)
 
 ```
 Signup/Login (Next.js)
    └─ better-auth client: signUp.email() / signIn.email()
-        └─ /api/auth/* (route.ts) → MongoDB `users` collection
+        └─ /api/auth/* (route.ts) → MongoDB `user` collection (singular!)
              └─ session cookie stored in the browser
+             └─ profile edits: authClient.updateUser() / changePassword()
+                (UpdateProfileForm — Better Auth writes the doc directly)
 
-Frontend needs to call the Express API
+Frontend needs to call the Express API   ← NOT BUILT YET (Phase 0)
    └─ GET /api/auth/token   (Better Auth jwt plugin, requires session cookie)
         └─ returns { token: "<JWT>" }   ← JWT payload = verified session user
              (includes id, email, name, role)
 
-Express API calls
+Express API calls                          ← NOT BUILT YET (Phase 0)
    └─ Authorization: Bearer <JWT>
         └─ verifyToken middleware → JWKS verification (see Decision D2)
              └─ req.user = { id, email, role }   ← trusted, server-signed
 ```
 
-- Better Auth owns **signup, login, session, password** — nothing else does.
+> ⚠️ The bottom two halves of this diagram are the **target design**. The
+> `jwt()` plugin is not in `src/lib/auth.ts` yet and the Express API has no
+> `verifyToken` — today the frontend passes `studentEmail` / `tutorEmail` /
+> `userEmail` as query/body params and the backend trusts them (all routes
+> carry `TODO(Phase 0)` comments).
+
+- Better Auth owns **signup, login, session, password, profile update** — nothing else does.
 - The `role` field is a Better Auth `additionalFields` value, set at signup
-  (`student` | `tutor`) and stored on the user document.
+  (`student` | `tutor`) and stored on the user document. `plan`
+  (`free` | `pro`, default `free`) is the other additional field with
+  `input: false`, so only the server (Stripe verify endpoint) can set it.
+- Better Auth stores its documents in the **`user`** collection (singular) —
+  see known issue #6 for the `users` vs `user` mismatch in `db.js`.
 - `admin` is **not** selectable at signup (see Decision D3).
 - The frontend never sends a role of its own authority; the backend reads the
-  role only from the verified JWT.
+  role only from the verified JWT (once Phase 0 lands).
 
 ## 5. Authorization Flow (Express middleware)
 
-Reusable middleware to be built in `mentorlagbe-server/middleware/`:
+Reusable middleware to be built in `mentorlagbe-server/src/middleware/`
+(**not created yet** — this is the Phase 0 remainder):
 
 1. **`verifyToken`** — reads `Authorization: Bearer <token>`, verifies the JWT
    (signature + expiry), attaches `req.user = { id, email, role }`. Rejects
@@ -174,7 +209,8 @@ Reusable middleware to be built in `mentorlagbe-server/middleware/`:
 2. **`requireRole("admin")` / `requireRole("tutor", "student")`** — checks
    `req.user.role` against an allowed list, rejects with 403 otherwise.
 
-Permission matrix (enforced in the backend, mirrored only for UI hints):
+Permission matrix (the **target** enforcement — today every row is enforced
+only by frontend UI hints, since no route reads a JWT yet):
 
 | Action                                   | student | tutor | admin |
 | ---------------------------------------- | :-----: | :---: | :---: |
@@ -183,39 +219,53 @@ Permission matrix (enforced in the backend, mirrored only for UI hints):
 | Edit own tuitions / set is-active        |   ❌    |  ✅   |  ✅   |
 | Approve / reject any tuition             |   ❌    |  ❌   |  ✅   |
 | Apply to a tuition                       |   ✅    |  ❌   |  ❌   |
+| Save / unsave (bookmark) a tuition       |   ✅    |  ❌   |  ❌   |
 | View **own** applications                |   ✅    |  ❌   |  ❌   |
 | View applications for **own** tuitions   |   ❌    |  ✅   |  ✅   |
 | Update application status (own tuitions) |   ❌    |  ✅   |  ✅   |
 | View all users / change roles            |   ❌    |  ❌   |  ✅   |
 | View all payments (revenue)              |   ❌    |  ❌   |  ✅   |
-| Update own profile (phone, bio, image)   |   ✅    |  ✅   |  ✅   |
+| Update own profile (name, image, password) | ✅    |  ✅   |  ✅   |
 | Upgrade to pro (Stripe)                  |   ✅    |  ✅   |  ❌   |
 
 Ownership rules: a tutor may only touch tuitions where
 `tuition.tutorEmail === req.user.email`; a student may only read applications
-where `application.studentEmail === req.user.email`.
+where `application.studentEmail === req.user.email` and saved tuitions where
+`saved.studentEmail === req.user.email`. (All of this becomes real when
+`verifyToken` exists — today the same emails come from query/body params.)
 
 ## 6. User Roles
 
 - **student** — searches tuitions, applies, tracks own application status.
 - **tutor** — posts tuitions, manages own listings and their applicants.
-- **admin** — approves/rejects tuitions, manages users and roles, sees all
-  data and Stripe revenue. Not created via signup; assigned in the DB (D3).
+- **admin** — approves/rejects tuitions, sees all data and Stripe revenue;
+  user/role management is part of the role but **not built yet** (Phase 1).
+  Not created via signup; assigned in the DB (D3).
 
 ## 7. Database Collections (MongoDB, db: `mentorlagbe`)
 
-### 7.1 `users` — created/updated by Better Auth (signup, profile update), admin role change, Stripe webhook
+### 7.1 `user` — Better Auth's collection (singular!), profile update, admin role change, Stripe verify
+
+> **Actual collection name is `user` (singular)** — that is what Better Auth
+> creates and what every route reads (`db.collection('user')`). The
+> `usersCollection` export in `db.js` points at `users` (plural) and is
+> **never imported** — dead code, see known issue #6.
 
 | Field       | Type   | Notes                                   |
 | ----------- | ------ | --------------------------------------- |
-| name        | string | required                                |
+| name        | string | required — editable via `updateUser`    |
 | email       | string | unique, required                        |
-| image       | string | profile photo (IMGBB URL)               |
+| image       | string | profile photo (IMGBB URL) — editable via `updateUser` |
 | role        | string | `student` \| `tutor` \| `admin`         |
-| phone       | string | profile                                 |
-| bio         | string | profile                                 |
-| plan        | string | `free` \| `pro`                         |
+| plan        | string | `free` \| `pro` — additionalField with `input: false`; only the Stripe verify endpoint writes `pro` |
 | createdAt   | date   | Better Auth manages                     |
+
+> `phone` / `bio` from the original spec are **not implemented**: they are not
+> declared as `additionalFields`, no form sends them, and nothing reads them.
+> The profile page only edits **name + image** (`authClient.updateUser()`)
+> and **password** (`authClient.changePassword()`) — there is no
+> `/api/users/profile` endpoint. (`studentPhone` on *applications* is a
+> different, real field — it comes from the apply dialog.)
 
 ### 7.2 `tuitions` — created and managed by tutor, approved/rejected by admin
 
@@ -225,16 +275,25 @@ where `application.studentEmail === req.user.email`.
 | subject        | string | required                                 |
 | classLevel     | string | required                                 |
 | mode           | string | `online` \| `offline`                    |
-| location       | string | required when offline                    |
+| location       | string | shown for offline mode (server does not require it) |
 | monthlyFee     | number | required                                 |
 | daysPerWeek    | number | required                                 |
-| bannerImage    | string | IMGBB URL                                |
+| bannerImage    | string | pasted image URL (any host; no upload field) |
 | description    | string | required                                 |
-| tutorName      | string | copied from JWT user                     |
-| tutorEmail     | string | copied from JWT user — ownership key     |
-| approvalStatus | string | `pending` \| `approved` \| `rejected`    |
-| isActive       | bool   | tutor can toggle                         |
-| createdAt      | date   |                                          |
+| tutorName      | string | from request body (⚠️ JWT pending — known issue #9) |
+| tutorEmail     | string | from request body — ownership key (⚠️ JWT pending) |
+| approvalStatus | string | `pending` \| `approved` \| `rejected` (server-forced `pending` on create) |
+| isActive       | bool   | tutor can toggle via `PATCH /:id` (open/close) |
+| createdAt      | date   | server-set (client value ignored) |
+
+Server rules enforced in `POST /api/tuitions`: required fields, `approvalStatus`
+and `createdAt` are **never** taken from the body, and free-plan tutors are
+limited to **2 posts** (`getPlan()` → 403 with an upgrade message).
+List endpoints (`GET /`, `/latest`, `/:id`) return only
+`approvalStatus: 'approved' && isActive: true`. Responses attach `tutorPlan`
+(`free`/`pro`) so the frontend can render the golden PRO badge.
+Server-side search filters are **not** implemented — the `/tuitions` page
+filters client-side.
 
 ### 7.3 `applications` — submitted by student, status updated by tutor
 
@@ -245,141 +304,198 @@ where `application.studentEmail === req.user.email`.
 | subject          | string | snapshot                                 |
 | monthlyFee       | number | snapshot                                 |
 | tutorEmail       | string | used for tutor ownership check           |
-| studentName      | string | from JWT                                 |
-| studentEmail     | string | from JWT — ownership key                 |
+| studentName      | string | from request body (⚠️ JWT pending)       |
+| studentEmail     | string | from request body — ownership key (⚠️ JWT pending) |
 | studentPhone     | string | form input                               |
 | preferredSchedule| string | form input                               |
 | studentNote      | string | form input                               |
 | status           | string | `pending` \| `accepted` \| `rejected`    |
 | appliedAt        | date   |                                          |
 
-### 7.4 `payments` — created via Stripe checkout + webhook
+Server rules in `POST /api/applications`: rejects a second application to the
+same tuition (`400 already applied`) and limits free-plan students to
+**5 applications** (403 upgrade message). `status` starts `pending`; only
+`accepted`/`rejected` are valid on the tutor's `PATCH`.
+
+### 7.4 `payments` — created by `GET /api/payments/verify` (NO webhook)
 
 | Field         | Type   | Notes                                  |
 | ------------- | ------ | -------------------------------------- |
-| userEmail     | string |                                         |
-| userName      | string |                                         |
+| userEmail     | string | from checkout session metadata         |
+| userName      | string | from `user` doc / Stripe customer      |
 | userRole      | string | `student` \| `tutor`                   |
-| planName      | string | e.g. `pro`                             |
-| amount        | number |                                         |
-| currency      | string | e.g. `usd`                             |
-| transactionId | string | Stripe payment intent / charge id       |
-| stripeSessionId | string | Stripe checkout session id             |
+| planName      | string | `Pro Tutor Plan` \| `Pro Student Plan` |
+| amount        | number | dollars (e.g. `15` tutor / `10` student) |
+| currency      | string | `usd`                                  |
+| transactionId | string | Stripe payment intent id               |
+| stripeSessionId | string | **unique index** — idempotency key   |
 | paymentStatus | string | `paid`                                 |
-| paidAt        | date   |                                         |
+| paidAt        | date   |                                          |
 
-> Note: `payments` collection is **not yet referenced** in `index.js`.
+Flow (no Stripe webhook, no `STRIPE_WEBHOOK_SECRET`):
+`POST /api/payments/checkout` creates a session (amount by role, metadata
+`{userEmail, userRole}`, success URL `/payment/success?session_id=…`) →
+Stripe hosted page → success page calls `GET /api/payments/verify?sessionId=…`
+→ server confirms `payment_status === 'paid'` with Stripe, upserts the
+`payments` doc (unique index on `stripeSessionId` makes double-fires from
+React StrictMode safe) and sets `user.plan = 'pro'`.
 
-## 8. API Modules (to be built in `mentorlagbe-server/routes/`)
+### 7.5 `savedTuitions` — student bookmarks (new module)
 
-Base URL: `http://localhost:5000`. All `/api/*` routes except auth-related
-public reads require `Authorization: Bearer <JWT>`.
+| Field       | Type   | Notes                                    |
+| ----------- | ------ | ---------------------------------------- |
+| tuitionId   | string | tuition `_id` as a **string**            |
+| studentEmail| string | ownership key (⚠️ from query/body, JWT pending) |
+| savedAt     | date   | sort key (newest first)                  |
 
-| Module        | Method + Path                                  | Access        | Status |
-| ------------- | ---------------------------------------------- | ------------- | ------ |
-| **auth token**| `GET /api/auth/token` (Better Auth, client)    | session cookie| ✅ plugin (D2) |
-| **users**     | `GET /api/users`                               | admin         | ⬜     |
-|               | `GET /api/users/:email`                        | self / admin  | ⬜     |
-|               | `PATCH /api/users/profile`                    | self          | ⬜     |
-|               | `PATCH /api/users/:email/role`                | admin         | ⬜     |
-| **tuitions**  | `POST /api/tuitions`                           | tutor (⚠️ no JWT yet) | ✅     |
-|               | `GET /api/tuitions` (approved only, filters)   | public        | ✅ (filters ⬜) |
-|               | `GET /api/tuitions/mine`                       | tutor (⚠️ email from query, no JWT yet) | ✅     |
-|               | `GET /api/tuitions/:id`                        | public        | ⬜     |
-|               | `PATCH /api/tuitions/:id` (edit)               | owner tutor   | ⬜     |
-|               | `PATCH /api/tuitions/:id/status`               | admin         | ⬜     |
-|               | `PATCH /api/tuitions/:id/active`               | owner tutor   | ⬜     |
-| **applications** | `POST /api/applications`                    | student       | ⬜     |
-|               | `GET /api/applications/mine`                   | student (own) | ⬜     |
-|               | `GET /api/applications/tuition/:tuitionId`     | owner tutor   | ⬜     |
-|               | `PATCH /api/applications/:id/status`           | owner tutor   | ⬜     |
-| **payments**  | `POST /api/payments/checkout`                  | student/tutor | ⬜     |
-|               | `POST /api/payments/webhook` (Stripe, raw body)| Stripe        | ⬜     |
-|               | `GET /api/payments`                            | admin         | ⬜     |
-| **upload**    | IMGBB upload (see D4)                          | —             | ⬜     |
+Rules: one row per (tuitionId, studentEmail) — `400 already saved` on
+duplicates; free students capped at **5 bookmarks** (403 upgrade message);
+`GET /api/saved` joins back to `tuitions` and returns only approved + active
+docs, keeping the newest-saved order.
+
+## 8. API Modules (`mentorlagbe-server/src/routes/`)
+
+Base URL: `http://localhost:5000`.
+
+> ⚠️ **No route requires `Authorization: Bearer <JWT>` yet** — every email /
+> role used for ownership or admin checks comes from the query string or
+> body (marked ⚠️ below, `TODO(Phase 0)` in code). The "Access" column is
+> the intended rule, not the current enforcement.
+
+| Module        | Method + Path                                  | Intended access | Status |
+| ------------- | ---------------------------------------------- | --------------- | ------ |
+| **auth token**| `GET /api/auth/token` (Better Auth, client)    | session cookie  | ⬜ `jwt()` plugin not added yet (D2) |
+| **users**     | `GET /api/users/stats` (dashboard numbers)     | admin (⚠️ public) | ✅     |
+|               | `GET /api/users`                               | admin           | ✅ sample (returns `data: null`) |
+|               | `GET /api/users/:email`                        | self / admin    | ⬜ not needed yet |
+|               | `PATCH /api/users/profile`                    | self            | ❌ not built — profile goes through Better Auth `updateUser` |
+|               | `PATCH /api/users/:email/role`                | admin           | ⬜     |
+| **tuitions**  | `POST /api/tuitions`                           | tutor (⚠️ email from body) | ✅ (free = max 2) |
+|               | `GET /api/tuitions` (approved + active)        | public          | ✅ (server-side filters ⬜ — filtering is client-side) |
+|               | `GET /api/tuitions/latest` (6 newest)          | public          | ✅     |
+|               | `GET /api/tuitions/mine`                       | tutor (⚠️ email from query) | ✅     |
+|               | `GET /api/tuitions/all` (all statuses)         | admin (⚠️ public) | ✅     |
+|               | `GET /api/tuitions/:id`                        | public          | ✅     |
+|               | `PATCH /api/tuitions/:id` (edit + `isActive`)  | owner tutor (⚠️ no ownership check) | ✅ |
+|               | `PATCH /api/tuitions/:id/status`               | admin (⚠️ no JWT) | ✅ (approve/reject/reinstate) |
+|               | `DELETE /api/tuitions/:id`                     | owner tutor (⚠️ no ownership check) | ✅ |
+| **applications** | `POST /api/applications`                    | student (⚠️ email from body) | ✅ (no dupes, free = max 5) |
+|               | `GET /api/applications/mine`                   | student own (⚠️ email from query) | ✅ |
+|               | `GET /api/applications/tutor`                  | tutor for own posts (⚠️ email from query) | ✅ (replaces the old `/tuition/:tuitionId` plan) |
+|               | `PATCH /api/applications/:id/status`           | owner tutor (⚠️ no ownership check) | ✅ (accepted/rejected) |
+| **saved**     | `GET /api/saved`                               | student own (⚠️ email from query) | ✅ (approved+active join) |
+|               | `POST /api/saved`                              | student (⚠️ email from body) | ✅ (free = max 5) |
+|               | `DELETE /api/saved`                            | student own      | ✅     |
+| **payments**  | `POST /api/payments/checkout`                  | student/tutor (⚠️ email from body) | ✅ ($15 tutor / $10 student) |
+|               | `GET /api/payments/verify?sessionId=`          | payer (⚠️ public) | ✅ records payment + flips `plan` (idempotent) |
+|               | `GET /api/payments`                            | admin (⚠️ public) | ✅ (empty until a real checkout happens) |
+|               | `POST /api/payments/webhook`                   | Stripe          | ❌ **not used** — verify-based flow instead (see 7.4) |
+| **upload**    | IMGBB from the browser (D4)                    | —               | ✅ `src/lib/imgbb.ts` — used for the **profile photo only**; tuition banner is a pasted URL input |
 
 ## 9. Environment Variables
 
-### `mentorlagbe-client/.env` (gitignored)
+### `mentorlagbe-client/.env` (gitignored) — actual keys present today
 
 ```
 BETTER_AUTH_SECRET=...            # Better Auth signing secret
 BETTER_AUTH_URL=http://localhost:3000
 DB_URI=mongodb+srv://...          # same Atlas cluster, db: mentorlagbe
-NEXT_PUBLIC_API_URL=http://localhost:5000   # ⬜ to be added
-NEXT_PUBLIC_IMGBB_API_KEY=...              # ⬜ to be added (D4)
+NEXT_PUBLIC_API_URL=http://localhost:5000   # ✅ used by api.ts / actions.ts
+NEXT_PUBLIC_IMGBB_API_KEY=...              # ✅ profile photo upload (D4)
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=...     # present but UNUSED (no stripe.js)
+STRIPE_SECRET_KEY=...             # present but only the dead sample
+                                   # checkout_sessions route reads it
 ```
 
-### `mentorlagbe-server/.env` (gitignored)
+### `mentorlagbe-server/.env` (gitignored) — actual keys present today
 
 ```
 DB_URI=mongodb+srv://...          # ✅ present (secret — never commit)
 PORT=5000                         # ✅ present, defaults to 5000
-CLIENT_URL=http://localhost:3000  # ✅ present, used by CORS
-BETTER_AUTH_URL=http://localhost:3000   # ⬜ needed for JWKS verification (D2)
-STRIPE_SECRET_KEY=...             # ⬜ for Stripe checkout
-STRIPE_WEBHOOK_SECRET=...         # ⬜ for webhook signature
+CLIENT_URL=http://localhost:3000  # ✅ present, used by CORS + Stripe return URLs
+STRIPE_SECRET_KEY=sk_test_...     # ✅ present, used by src/routes/payments.js
 ```
 
-`.env.example` exists with placeholder values (no real secrets).
-`src/server.js` validates required vars (`DB_URI`, `CLIENT_URL`) at startup
-and exits with a clear message if any are missing.
+Notes:
+- `.env.example` on the server lists `DB_URI`, `PORT`, `CLIENT_URL`,
+  `STRIPE_SECRET_KEY` (placeholders, no real secrets).
+- **No `BETTER_AUTH_URL` and no `STRIPE_WEBHOOK_SECRET` on the server** —
+  the former is only needed once JWKS verification (D2) is set up, the latter
+  is never needed because there is no webhook.
+- `src/server.js` validates required vars (`DB_URI`, `CLIENT_URL`) at startup
+  and exits with a clear message if any are missing. Stripe is validated
+  lazily per-request (`getStripe()` throws a 500 `ApiError` if the key is
+  missing — the server still boots without it).
 
 ## 10. Current Implementation Status
 
 ### ✅ Completed
 
-- Next.js 16 + TS + Tailwind 4 + shadcn/ui project setup, theming (light/dark).
-- Better Auth server config (MongoDB adapter, `role` additional field).
-- Better Auth client, signup form (role picker: student/tutor), login form.
-- Auth API route (`/api/auth/[...all]`).
-- Dashboard shell: role-aware sidebar (nav per role), header (title, user menu,
-  sign-out), skeletons, toast notifications.
-- Navbar with role badge + dashboard/profile links.
-- **Backend basic foundation** (see section 3 for folder structure):
-  - `src/server.js` — env validation → MongoDB connect → `app.listen`
-    (server starts only after the DB connects; exits on failure).
-  - `src/app.js` — CORS (`CLIENT_URL` only), `express.json()`, route mounting,
-    404 handler, global error handler (all in correct order).
-  - `src/config/db.js` — reusable `connectToMongoDB()` + `getDb()`, reads
-    `DB_URI` from `.env`, logs a success message.
-  - `src/middleware/notFound.js` — 404 handler for unknown routes (passes an
-    `ApiError` to the global handler).
-  - `src/middleware/errorHandler.js` — global error handler (always last);
-    reads `err.statusCode`, only logs 5xx.
-  - `src/utils/ApiResponse.js` — `ApiResponse.success(res, { message, data })`
-    → `{ success: true, message, data }`.
-  - `src/utils/ApiError.js` — `new ApiError(statusCode, message)` error class
-    for routes (`next(new ApiError(404, '...'))`).
-  - `src/config/db.js` also exports `usersCollection`, `tuitionsCollection`,
-    `applicationsCollection` — assigned **after** the connection succeeds
-    (module-level `db.collection(...)` would crash with `db === null`).
-  - `src/routes/healthRoutes.js` — `GET /api/health` (uses `ApiResponse`).
-  - **Frontend API layer** (new): `src/lib/api.ts` (`apiGet` for GET) and
-    `src/lib/actions.ts` (`apiPost` / `apiPatch` / `apiDelete` for mutable
-    calls) — both parse the `{ success, message, data }` envelope and throw
-    `message` on failure. `NEXT_PUBLIC_API_URL` added to client `.env`.
-  - **Post a Tuition page** (`dashboard/tutor/post-tuition`): shadcn form
-    (title, subject, class level, mode select, location, fee, days/week,
-    banner URL, description) → `apiPost("/api/tuitions")` → toast →
-    redirects to `/dashboard/tutor/my-tuitions`.
-  - **My Tuitions page** (`dashboard/tutor/my-tuitions`): top-right
-    "Post a Tuition" button, shadcn **Table** of own posts (title, subject,
-    class, mode, fee, status badge, created), loading skeletons, empty
-    state; data comes from `apiGet("/api/tuitions/mine?tutorEmail=…")`
-    using the Better Auth session email.
-  - Consistent response shape everywhere:
-    `{ success, message, data? }`.
-  - `.env.example`, `npm start` / `npm run dev` scripts; `index.js` kept as a
-    thin wrapper (`import './src/server.js'`) so the old filename still works.
-  - Route stubs mounted in `app.js`: `routes/users.js` (includes a sample
-    `GET /api/users` using `ApiResponse`), `routes/tuitions.js`,
-    `routes/applications.js` — planned-endpoint comments only, no real
-    logic yet (tuitions/applications return 404 until their phases start).
-  - **Dependencies: none added** — express, cors, dotenv, mongodb were
-    already installed and are reused.
+**Frontend**
+
+- Next.js 16 + TS + Tailwind 4 + shadcn/ui project setup, theming (light/dark),
+  shared palette (rule #10), `surface-3d` 3D card effects.
+- Better Auth server config (MongoDB adapter, `role` + `plan` additional
+  fields), client, signup form (role picker: student/tutor), login form,
+  auth API route (`/api/auth/[...all]`).
+- **Public pages**: homepage (`Hero` + `TrustStrip` + `FeaturedTuitions` +
+  `PlanSection`), `/tuitions` browse with client-side filters,
+  `/tuitions/[id]` detail + apply dialog + share/bookmark, `/pricing`,
+  `/how-it-works` (static), `/payment/success` (Stripe verify), footer with
+  quick links.
+- **API layer**: `src/lib/api.ts` (GET) + `src/lib/actions.ts` (POST/PATCH/
+  DELETE + `isPlanLimitError`) — every page uses these; consistent
+  `{ success, message, data }` envelope.
+- **Dashboard shell**: role-aware sidebar (per-role nav incl. Saved Tuitions,
+  Applicants, moderation links), header (page title, search, notifications,
+  user menu), `DashboardPageHeader` + `OverviewCards` shared pieces,
+  skeletons, sonner toasts.
+- **Route states**: root and public-page loading skeletons, a dashboard loading
+  skeleton, a themed root `not-found.tsx` page, and a client `error.tsx`
+  boundary with retry and Back to Home actions.
+- **Student**: overview (stats + quick actions), My Applications (status
+  badges, refresh), Saved Tuitions (bookmark grid), profile page
+  (name/photo via IMGBB + change password).
+- **Tutor**: overview, Post a Tuition (form → POST → redirect, plan-limit
+  CTA), My Tuitions (table + View/Edit/Delete dialogs + `isActive` switch),
+  Applicants (accept/reject with toasts), profile page.
+- **Admin**: overview (`GET /api/users/stats`: users/tutors/students/pending/
+  revenue), Tuitions moderation (Pending/Approved/Rejected/All tabs +
+  Approve/Reject/Reinstate), Transactions (`GET /api/payments` table),
+  profile page. **`admin/users` is still a placeholder card.**
+- **Bookmarks**: `SavedTuitionsProvider` context (ids, `toggleSave`) wired
+  into `TuitionCard`, tuition detail, and the saved page; 403 plan-limit
+  messages trigger an upgrade prompt.
+- **Stripe pro plan**: `PlanSection` "Upgrade to Pro" →
+  `POST /api/payments/checkout` → `window.location.href = session.url` →
+  `/payment/success` calls `GET /api/payments/verify` → toast + redirect.
+  Prices: $15 tutor / $10 student (one-time).
+- Navbar (role badge, dashboard/profile links, theme toggle, mobile sheet)
+  and Footer. `next.config.ts` allows **all image hosts** (http + https).
+
+**Backend** (see section 3 for folder structure)
+
+- Foundation: `src/server.js` (env validation → MongoDB connect → listen),
+  `src/app.js` (CORS `CLIENT_URL`, `express.json()`, 5 routers, 404 +
+  global error handler in order), `src/config/db.js` (`connectToMongoDB` /
+  `getDb` + 5 collection refs + **unique index on
+  `payments.stripeSessionId`**), `notFound` / `errorHandler` middleware,
+  `ApiResponse` / `ApiError`, `.env.example`, `npm start` / `npm run dev`,
+  `index.js` compat wrapper.
+- `src/utils/plan.js` — `getPlan(email)` → `free`/`pro` (used by all three
+  plan-limit checks: 2 posts / 5 bookmarks / 5 applications).
+- **Route modules all implemented**: `tuitions.js` (9 endpoints incl.
+  moderation, `withTutorPlan` PRO-badge join), `applications.js` (4),
+  `saved.js` (3), `payments.js` (checkout/verify/list), `users.js`
+  (`/stats` + sample), `healthRoutes.js`.
+- Consistent response shape everywhere: `{ success, message, data? }`.
+- **Dependencies**: express, cors, dotenv, mongodb + `stripe` (server).
 
 #### Backend test results (actually run on 2026-11-21)
+
+> Historical snapshot from the foundation phase — newer routes (saved,
+> payments, applications, `/tuitions/all`, `/latest`, `/:id`) have **not**
+> been through this table; verify them manually before relying on it.
 
 | Test                                   | Result                                                                 |
 | -------------------------------------- | ---------------------------------------------------------------------- |
@@ -394,88 +510,104 @@ and exits with a clear message if any are missing.
 | `GET /api/tuitions`                    | ✅ 200, returns **only** `approved` docs (pending test doc was hidden) |
 | `GET /api/tuitions/mine?tutorEmail=…`  | ✅ 200, returns only that tutor's posts (newest first)                 |
 | `GET /api/tuitions/mine` (no email)    | ✅ 400 `tutorEmail query param is required`                            |
-| Frontend `npm run build`               | ✅ compiled + TypeScript passed, all 19 routes generated               |
-| Stub route `/api/applications`        | ✅ 404 with consistent error shape (endpoints not implemented yet) |
+| Frontend `npm run build`               | ✅ compiled + TypeScript passed (route count since changed — re-run before relying on it) |
+| Stub route `/api/applications`        | ✅ 404 *at the time* — **now implemented**, this row is obsolete |
 | Unknown route `GET /api/does-not-exist`| ✅ 404 `{"success":false,"message":"Route not found: GET /api/does-not-exist"}` |
 | Invalid JSON POST (error handler)      | ✅ 400 with `{"success":false,...}` — global handler caught it         |
 | CORS header                            | ✅ `Access-Control-Allow-Origin: http://localhost:3000`                |
 | Server logs                            | ✅ No runtime errors                                                   |
 
-### 🚧 Placeholders (pages exist but contain only an `<h1>`/text)
+### 🚧 Placeholders (page exists but is not functional)
 
-- `dashboard/student`, `dashboard/student/my-applications`, `dashboard/student/profile`
-- `dashboard/tutor` (overview), `tutor/applicants`, `tutor/profile`
-- `dashboard/admin`, `admin/users`, `admin/tuitions`, `admin/transactions`, `admin/profile`
-- `(root)/page.tsx` (homepage — needs public tuition search)
+- `dashboard/admin/users` — header + "User Management Page" card only (no
+  list, no role dropdown; `GET /api/users/:email` and
+  `PATCH /api/users/:email/role` don't exist yet).
+- `DashboardHeader` search input ("Search...") and notification bell —
+  UI only, no behavior. (The Navbar has no search box.)
+- Hero search on the homepage — only shows a toast ("opens in a later
+  phase") instead of navigating to `/tuitions` with the query.
+- Footer social links, TrustStrip stats (1.5M+ etc.) — static/hard-coded.
 
-> Implemented already: `dashboard/tutor/post-tuition` (create form → POST
-> `/api/tuitions` → redirect) and `dashboard/tutor/my-tuitions` (shadcn
-> Table of own tuitions + "Post a Tuition" button).
+> Everything else that used to be a placeholder is now implemented: all
+> three dashboard overviews, student my-applications / saved-tuitions,
+> tutor applicants / my-tuitions / post-tuition, admin tuitions /
+> transactions, the three profile pages, and the public homepage.
 
 ### ❌ Not started
 
-- JWT token flow client → Express; `verifyToken` / `requireRole` middleware.
-- Every API module listed in section 8 (users, applications, payments, filters).
-- IMGBB banner upload, Stripe checkout + webhook, `payments` collection.
-- Frontend data fetching for the remaining pages (only tuitions wired so far).
-- Dashboard route protection (no `middleware.ts`, no role redirect).
-- Homepage search/filter UI.
+- **JWT token flow**: `jwt()` plugin in `src/lib/auth.ts`, `GET /api/auth/token`,
+  `verifyToken` / `requireRole` middleware, `jose` dependency — every route's
+  `TODO(Phase 0)` still open.
+- **Dashboard route protection** (no `middleware.ts`, no client-side role
+  guard — signed-out visitors see page content).
+- **Admin user management** (list users, change roles).
+- **Server-side search/filter query params** on `GET /api/tuitions`
+  (current filtering is client-side in the browser).
+- **`phone` / `bio` profile fields** (not declared, not sent, not shown).
+- Cleanup: dead `checkout_sessions` route, unused `@stripe/stripe-js` and
+  `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`, unused `usersCollection` export.
 
 ## 11. Implementation Roadmap
 
-**Phase 0 — Foundations (do first, unblocks everything)**
+**Phase 0 — Foundations (the only truly blocking remainder)**
 
 1. ✅ **Backend foundation done** — Express app, env validation, CORS
    (`CLIENT_URL`), `express.json()`, MongoDB connection, 404 + global error
    handler, health check, `.env.example`, `npm start`/`npm run dev` scripts.
 2. ⬜ Add `jwt()` plugin from `better-auth/plugins/jwt` to `src/lib/auth.ts`
    (do not touch existing options — only add the plugin).
-3. ✅ `NEXT_PUBLIC_API_URL=http://localhost:5000` added to client `.env`
-   (IMGBB key still pending — D4).
-4. ⬜ The current `src/lib/api.ts` is a plain GET helper. Extend it (and
-   `src/lib/actions.ts`) to fetch `/api/auth/token`, cache the JWT, and
-   attach `Authorization: Bearer` to every request.
-5. ⬜ Server: add `jose` (D2), `verifyToken` + `requireRole` middleware,
-   `payments` collection (needed in Phase 5).
+3. ✅ Client env vars present: `NEXT_PUBLIC_API_URL`, `NEXT_PUBLIC_IMGBB_API_KEY`.
+4. ⬜ Extend `src/lib/api.ts` / `src/lib/actions.ts` to fetch
+   `/api/auth/token`, cache the JWT, and attach `Authorization: Bearer` to
+   every request (keep the same `{ success, message, data }` parsing).
+5. ⬜ Server: add `jose` (D2), `verifyToken` + `requireRole` middleware in
+   `src/middleware/`, then replace every `TODO(Phase 0)` query/body email
+   with `req.user` (routes: tuitions, applications, saved, payments, users).
 
-**Phase 1 — Users API + profile pages**
+**Phase 1 — Users API + admin user management**
 
-- Backend users module (admin list/role change, self profile get/update).
-- Frontend: 3 profile pages (name, phone, bio, image, plan badge) + admin
-  users table (search, role dropdown).
+- ⬜ Backend: `GET /api/users/:email`, `PATCH /api/users/:email/role`
+  (admin), both behind `verifyToken` + `requireRole('admin')`.
+- ⬜ Frontend: `dashboard/admin/users` table (search, role dropdown) — the
+  last placeholder page.
 
-**Phase 2 — Tuitions API + tutor pages** (partially done ✅)
+**Phase 2 — Tuitions API + tutor pages** ✅ **done**
 
-- ✅ Backend: `POST /api/tuitions`, `GET /api/tuitions` (approved only),
-  `GET /api/tuitions/mine`.
-- ✅ Frontend: post-tuition form, my-tuitions table.
-- ⬜ Backend: edit / admin approval status / isActive / detail / search filters.
-- ⬜ Frontend: admin tuitions approval queue (approve/reject buttons),
-  IMGBB banner upload (D4).
+- ✅ Backend: create, list (approved), latest, mine, all, detail, edit +
+  `isActive`, admin status, delete.
+- ✅ Frontend: post-tuition, my-tuitions (dialogs), admin moderation queue.
+- ⬜ Optional: server-side search/filter query params (Phase 4 backend half).
 
-**Phase 3 — Applications API + student/tutor pages**
+**Phase 3 — Applications API + student/tutor pages** ✅ **done**
 
-- Backend applications module (own-records-only rules).
-- Frontend: student my-applications (status badges, refetch to "track in real
-  time"), tutor applicants (accept/reject).
+- ✅ Backend: apply (no dupes, free = max 5), my applications, tutor's
+  applicants, accept/reject.
+- ✅ Frontend: student my-applications (status badges + refresh), tutor
+  applicants (accept/reject).
 
-**Phase 4 — Homepage search & filters**
+**Phase 4 — Homepage search & filters** (partially done ✅)
 
-- Public list of approved tuitions: search text, subject, class level, mode,
-  fee range filters (query params handled by `GET /api/tuitions`).
+- ✅ Frontend: `/tuitions` search + subject/class/mode/fee filters
+  (client-side), homepage featured list, `SavedTuitionsProvider` bookmarks.
+- ⬜ Backend: query-param filters on `GET /api/tuitions` + wire Hero search
+  to `/tuitions?q=…`.
 
-**Phase 5 — Stripe pro plan**
+**Phase 5 — Stripe pro plan** ✅ **done (verify flow, no webhook)**
 
-- `POST /api/payments/checkout` → redirect to Stripe `session.url`
-  (no stripe.js needed), webhook updates `users.plan = "pro"` + inserts into
-  `payments`, admin transactions page reads `payments`, "Upgrade to Pro" button
-  in dashboard.
+- ✅ `POST /api/payments/checkout` → `window.location.href = session.url`,
+  `/payment/success` → `GET /api/payments/verify` (confirms with Stripe,
+  upserts `payments`, sets `plan: 'pro'`), admin transactions page reads
+  `payments`, `PlanSection` upgrade buttons, plan limits (2/5/5) enforced
+  with `getPlan()`.
+- ⬜ Optional hardening: verify the JWT on checkout/verify so only the payer
+  can trigger them (currently public).
 
 **Phase 6 — Route protection & polish**
 
-- Dashboard layout guard: no session → `/login`; role mismatch → own dashboard
-  (client-side, using existing `useSession`).
-- Fix known issues (section 13), Google login decision, final pass.
+- ⬜ Dashboard layout guard: no session → `/login`; role mismatch → own
+  dashboard (client-side, using existing `useSession`), or `middleware.ts`.
+- ⬜ Fix known issues (section 13): login/signup redirect, `/register` link,
+  Google login decision, `users` vs `user` cleanup, dead Stripe sample code.
 
 ## 12. Important Decisions
 
@@ -485,68 +617,113 @@ and exits with a clear message if any are missing.
   better-auth 1.7.25): `GET /api/auth/token` returns `{ token }` for the
   current session; Express verifies it against Better Auth's JWKS endpoint
   (`/api/auth/jwks`, EdDSA) using `jose`. This keeps one auth system and needs
-  no shared secret juggling. *Alternative (simpler but less standard): HS256
-  shared secret with `jsonwebtoken` — reconsider only if JWKS setup gets
-  confusing.*
+  no shared secret juggling. **Not implemented yet** — the plugin is still
+  missing from `src/lib/auth.ts` (Phase 0 remainder). *Alternative (simpler
+  but less standard): HS256 shared secret with `jsonwebtoken` — reconsider
+  only if JWKS setup gets confusing.*
 - **D3 — Admin users are not self-registered.** Signup offers student/tutor
-  only; an admin is promoted directly in the `users` collection (or later via
+  only; an admin is promoted directly in the `user` collection (or later via
   an admin API call). Keeps Better Auth config untouched.
 - **D4 — IMGBB upload happens from the frontend** directly to
   `https://api.imgbb.com/1/upload` using `NEXT_PUBLIC_IMGBB_API_KEY`; only the
   returned URL is stored in MongoDB. (Alternative: a backend proxy — skip it,
-  no benefit for an assignment.) `i.ibb.co` must be added to
-  `next.config.ts` `images.remotePatterns`.
+  no benefit for an assignment.) Implemented in `src/lib/imgbb.ts` and used
+  for the **profile photo**; the tuition banner is a plain pasted URL.
+  `next.config.ts` now allows **all http/https image hosts**, so no
+  per-host `remotePatterns` entry is needed anymore.
 - **D5 — No new frontend libraries.** Stripe checkout = backend creates the
   session, frontend does `window.location.href = session.url`. No stripe.js,
-  no data-fetching library, no state manager.
+  no data-fetching library, no state manager. (Note: `@stripe/stripe-js` and
+  `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` exist in the repo but are unused —
+  leftovers to remove, see "Not started" cleanup.)
 - **D6 — "Real time" application status = simple refetch/polling**
   (`router.refresh()` or a small `setInterval`), not websockets.
 - **D7 — Snapshots in `applications`** (tuitionTitle, subject, fee, tutorEmail)
   so student lists render without joins and ownership checks stay one-line.
+- **D8 — Stripe uses a verify endpoint, NOT a webhook.** The success page
+  calls `GET /api/payments/verify?sessionId=…`; the server re-checks the
+  session with Stripe, upserts `payments` (unique `stripeSessionId` index =
+  idempotent) and sets `plan: 'pro'`. No `STRIPE_WEBHOOK_SECRET`, no raw-body
+  route. *Tradeoff: the plan only flips when the payer actually visits the
+  success page — fine for an assignment; a webhook would be the production
+  answer.*
 
 ## 13. Known Issues (fix during the roadmap)
 
-1. **Profile links 404**: `DashboardSidebar.tsx` and `Navbar.tsx`
-   (`getProfileRoute`) link to `/student|tutor|admin/profile` — missing the
-   `/dashboard` prefix. Real routes are `/dashboard/{role}/profile`.
-2. **No redirect after auth**: login goes to `/` instead of
-   `/dashboard/{role}`; signup `callbackURL` is `/login`.
-3. **No route protection**: `/dashboard/*` renders for signed-out visitors
-   (sidebar returns `null`, page content still shows).
-4. **Google login button will fail** — no Google OAuth provider configured in
-   Better Auth env. Either configure it or remove the button.
-5. **`next.config.ts`** only allows `images.unsplash.com` — IMGBB images
-   (`i.ibb.co`) will throw when used with `next/image`.
-6. **`payments` collection** not yet referenced in `src/config/db.js`
-   (add in Phase 5 — not needed for the foundation).
+1. **No redirect after auth**: `LoginForm` sends `callbackURL: "/"` (should be
+   `/dashboard/{role}`) and `SignupForm` uses `callbackURL: "/login"` (new
+   users land back on login instead of their dashboard).
+2. **No route protection**: `/dashboard/*` renders for signed-out visitors
+   (sidebar returns `null`, page content still shows). No `middleware.ts`.
+3. **Google login will fail** — no Google OAuth provider configured in Better
+   Auth env. The login button really calls `signIn.social({ provider:
+   "google" })` (errors → "Google sign-in failed"); the signup Google button
+   is UI-only (toast "available soon"). Configure it or remove both.
+4. **Mobile Navbar "Sign Up" links to `/register`** (404 — only `/signup`
+   exists). The desktop button is correct; the mobile sheet one is not.
+5. ~~`next.config.ts` only allows `images.unsplash.com`~~ ✅ **resolved** —
+   `remotePatterns` now allows all http/https hosts.
+6. **`users` vs `user` collection mismatch**: `db.js` exports
+   `usersCollection = db.collection('users')` (plural) but Better Auth and
+   every route use **`user`** (singular). The export is never imported —
+   dead code that will confuse anyone who uses it. Either point it at
+   `user` or delete it.
 7. ~~Server has no `start` script~~ ✅ **resolved** — `npm start` and
    `npm run dev` now exist.
-8. **Commit messages overstate progress** — pages referenced in git log are
-   still stubs.
-9. **`POST /api/tuitions` trusts `tutorName`/`tutorEmail` from the body, and
-   `GET /api/tuitions/mine` trusts `tutorEmail` from the query string** —
-   both must switch to the verified JWT as soon as `verifyToken` exists
-   (marked with TODOs in `src/routes/tuitions.js`). Until then these
-   endpoints are open to anyone and a tutor can read another tutor's posts
-   by changing the query param.
+8. **Commit messages can overstate progress** — always verify against this
+   file, not the git log.
+9. **No endpoint verifies a JWT yet.** `POST /api/tuitions` trusts
+   `tutorName`/`tutorEmail` from the body; `GET /api/tuitions/mine`,
+   `/api/applications/mine`, `/api/applications/tutor`, `GET/POST/DELETE
+   /api/saved` and `POST /api/payments/checkout` trust emails from the query
+   or body; `PATCH /api/tuitions/:id`, `DELETE /api/tuitions/:id` and
+   `PATCH /api/applications/:id/status` do **no ownership check**; admin
+   endpoints (`GET /api/tuitions/all`, `PATCH .../status`,
+   `GET /api/users/stats`, `GET /api/payments`) are public. All marked with
+   `TODO(Phase 0)`. Until Phase 0 lands: anyone can read anyone's data by
+   changing a query param, and admins are only "protected" by the UI.
 10. **Never run `npm run build` while `npm run dev` is running** — mixing
     production build artifacts into `.next` corrupts the dev module graph
     and causes `module factory is not available` / `Could not validate
     instant` errors. If it happens: stop dev, delete `.next`, restart dev,
     hard-reload the browser (`Ctrl+Shift+R`).
+11. **Dead Stripe leftovers in the client**: `src/app/api/checkout_sessions/`
+    (hard-coded test price ID, nothing calls it), `src/lib/stripe.ts` (only
+    it imports `stripe`), the `@stripe/stripe-js` dependency and
+    `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` env var are all unused — the real
+    flow is server-side in `mentorlagbe-server/src/routes/payments.js`.
+    Removing them prevents someone "fixing" payments in the wrong place.
+12. **`phone` / `bio` are specified but not implemented** — not declared as
+    Better Auth `additionalFields`, no form field, nothing reads them (see
+    7.1). The profile flow is currently only name + image + password (the
+    permission matrix row was corrected to match). Either implement the
+    fields or drop them from the spec.
 
 ## 14. Next Recommended Tasks (in order)
 
-1. Phase 0 remainder: Better Auth `jwt()` plugin + `src/lib/api.ts` +
-   server `verifyToken` / `requireRole` middleware (`jose`) + client env vars.
-2. Phase 1: users API → profile pages (also fixes issue #1 links).
-3. Phase 2: tuitions API → post-tuition / my-tuitions / admin approvals.
-4. Phase 3: applications API → my-applications / applicants.
-5. Phase 4: homepage search & filter.
-6. Phase 5: Stripe pro plan + payments + admin transactions.
-7. Phase 6: dashboard route guard + known-issue fixes.
+1. **Phase 0 remainder (highest value)**: Better Auth `jwt()` plugin →
+   `src/lib/api.ts` / `actions.ts` attach the Bearer token → server
+   `verifyToken` / `requireRole` (`jose`) → replace every `TODO(Phase 0)`
+   query/body email with `req.user`. This closes known issue #9.
+2. **Phase 6 guard**: dashboard route protection (no session → `/login`,
+   role mismatch → own dashboard) + auth redirects (issue #1) + the
+   `/register` link (issue #4).
+3. **Phase 1**: admin users API + `dashboard/admin/users` table (last
+   placeholder page).
+4. **Phase 4 backend**: query-param filters on `GET /api/tuitions` + wire
+   the Hero search to `/tuitions?q=…`.
+5. Cleanup pass (issues #6, #11): delete dead Stripe sample code, unused
+   deps/env, fix or remove `usersCollection`.
+6. Decide Google login (issue #3) and `phone`/`bio` (issue #12), then a
+   final manual test of the full flows (signup → post → approve → apply →
+   accept → upgrade).
 
 ---
 
-*Last updated: 2026-11-23 — shared light/dark UI palette applied; backend
-basic foundation implemented and tested (see section 10 test table).*
+*Last updated: 2026-11-23 — full project re-read and AGENTS.md brought in
+line with the actual code: tuitions/applications/saved/payments APIs and all
+dashboard pages are implemented, custom loading and error routes are added,
+Stripe runs on a verify endpoint (no webhook, D8), plan limits (2 posts / 5
+bookmarks / 5 applications) are enforced, and the remaining gaps are JWT
+middleware (Phase 0), route protection, admin user management, and cleanup
+(see sections 10–14).*
