@@ -317,7 +317,7 @@ same tuition (`400 already applied`) and limits free-plan students to
 **5 applications** (403 upgrade message). `status` starts `pending`; only
 `accepted`/`rejected` are valid on the tutor's `PATCH`.
 
-### 7.4 `payments` — created by `GET /api/payments/verify` (NO webhook)
+### 7.4 `payments` — created by the Stripe **webhook** (source of truth)
 
 | Field         | Type   | Notes                                  |
 | ------------- | ------ | -------------------------------------- |
@@ -332,13 +332,17 @@ same tuition (`400 already applied`) and limits free-plan students to
 | paymentStatus | string | `paid`                                 |
 | paidAt        | date   |                                          |
 
-Flow (no Stripe webhook, no `STRIPE_WEBHOOK_SECRET`):
+Flow (webhook, see D8):
 `POST /api/payments/checkout` creates a session (amount by role, metadata
 `{userEmail, userRole}`, success URL `/payment/success?session_id=…`) →
-Stripe hosted page → success page calls `GET /api/payments/verify?sessionId=…`
-→ server confirms `payment_status === 'paid'` with Stripe, upserts the
-`payments` doc (unique index on `stripeSessionId` makes double-fires from
-React StrictMode safe) and sets `user.plan = 'pro'`.
+Stripe hosted page → Stripe POSTs `checkout.session.completed` to
+`POST /api/payments/webhook` (mounted with `express.raw()` **before**
+`express.json()`, signature verified against `STRIPE_WEBHOOK_SECRET`) →
+server upserts the `payments` doc (unique index on `stripeSessionId` makes
+Stripe's retries/double deliveries safe) and sets `user.plan = 'pro'`.
+The success page only **polls the read-only** `GET /api/payments/status`
+(`{ recorded: boolean }`, no Stripe call, no writes) until the row appears —
+it can never create or change anything itself.
 
 ### 7.5 `savedTuitions` — student bookmarks (new module)
 
@@ -387,9 +391,9 @@ Base URL: `http://localhost:5000`.
 |               | `POST /api/saved`                              | student (⚠️ email from body) | ✅ (free = max 5) |
 |               | `DELETE /api/saved`                            | student own      | ✅     |
 | **payments**  | `POST /api/payments/checkout`                  | student/tutor (⚠️ email from body) | ✅ ($15 tutor / $10 student) |
-|               | `GET /api/payments/verify?sessionId=`          | payer (⚠️ public) | ✅ records payment + flips `plan` (idempotent) |
+|               | `POST /api/payments/webhook`                   | Stripe (signature-verified, raw body) | ✅ **source of truth**: records payment + flips `plan` |
+|               | `GET /api/payments/status?sessionId=`          | anyone (read-only) | ✅ returns `{ recorded }` — success page polls it |
 |               | `GET /api/payments`                            | admin (⚠️ public) | ✅ (empty until a real checkout happens) |
-|               | `POST /api/payments/webhook`                   | Stripe          | ❌ **not used** — verify-based flow instead (see 7.4) |
 | **upload**    | IMGBB from the browser (D4)                    | —               | ✅ `src/lib/imgbb.ts` — used for profile photos and tuition banners |
 
 ## 9. Environment Variables
@@ -414,18 +418,28 @@ DB_URI=mongodb+srv://...          # ✅ present (secret — never commit)
 PORT=5000                         # ✅ present, defaults to 5000
 CLIENT_URL=http://localhost:3000  # ✅ present, used by CORS + Stripe return URLs
 STRIPE_SECRET_KEY=sk_test_...     # ✅ present, used by src/routes/payments.js
+STRIPE_WEBHOOK_SECRET=whsec_...   # ✅ key added — VALUE still empty, must be
+                                   #   filled in or webhook rejects deliveries
 ```
 
 Notes:
 - `.env.example` on the server lists `DB_URI`, `PORT`, `CLIENT_URL`,
-  `STRIPE_SECRET_KEY` (placeholders, no real secrets).
-- **No `BETTER_AUTH_URL` and no `STRIPE_WEBHOOK_SECRET` on the server** —
-  the former is only needed once JWKS verification (D2) is set up, the latter
-  is never needed because there is no webhook.
+  `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` (placeholders, no real secrets).
+- **Webhook delivery setup** (required for Pro upgrades to complete):
+  - *Production*: Stripe Dashboard → Developers → Webhooks → add endpoint
+    `https://<your-domain>/api/payments/webhook` → copy the **Signing
+    secret** (`whsec_…`) into `STRIPE_WEBHOOK_SECRET`.
+  - *Local dev*: `stripe listen --forward-to localhost:5000/api/payments/webhook`
+    (Stripe CLI) and use the `whsec_…` it prints.
+  - If the secret is missing the server still boots (warning only) and the
+    webhook responds `500 STRIPE_WEBHOOK_SECRET is missing…`.
+- **No `BETTER_AUTH_URL` on the server** — only needed once JWKS
+  verification (D2) is set up.
 - `src/server.js` validates required vars (`DB_URI`, `CLIENT_URL`) at startup
-  and exits with a clear message if any are missing. Stripe is validated
-  lazily per-request (`getStripe()` throws a 500 `ApiError` if the key is
-  missing — the server still boots without it).
+  and exits with a clear message if any are missing; a missing
+  `STRIPE_WEBHOOK_SECRET` only prints a warning. Stripe's secret key is
+  validated lazily per-request (`getStripe()` throws a 500 `ApiError` if the
+  key is missing — the server still boots without it).
 
 ## 10. Current Implementation Status
 
@@ -469,7 +483,9 @@ Notes:
   messages trigger an upgrade prompt.
 - **Stripe pro plan**: `PlanSection` "Upgrade to Pro" →
   `POST /api/payments/checkout` → `window.location.href = session.url` →
-  `/payment/success` calls `GET /api/payments/verify` → toast + redirect.
+  Stripe fires the webhook (records payment + sets `plan: 'pro'`) →
+  `/payment/success` polls `GET /api/payments/status` until the row appears
+  (new "processing" state with Check again after ~18s), then shows success.
   Prices: $15 tutor / $10 student (one-time).
 - Navbar (role badge, dashboard/profile links, theme toggle, mobile sheet)
   and Footer. `next.config.ts` allows **all image hosts** (http + https).
@@ -487,7 +503,7 @@ Notes:
   plan-limit checks: 2 posts / 5 bookmarks / 5 applications).
 - **Route modules all implemented**: `tuitions.js` (9 endpoints incl.
   moderation, `withTutorPlan` PRO-badge join), `applications.js` (4),
-  `saved.js` (3), `payments.js` (checkout/verify/list), `users.js`
+  `saved.js` (3), `payments.js` (checkout/webhook/status/list), `users.js`
   (`/stats` + sample), `healthRoutes.js`.
 - Consistent response shape everywhere: `{ success, message, data? }`.
 - **Dependencies**: express, cors, dotenv, mongodb + `stripe` (server).
@@ -593,15 +609,20 @@ Notes:
 - ⬜ Backend: query-param filters on `GET /api/tuitions` + wire Hero search
   to `/tuitions?q=…`.
 
-**Phase 5 — Stripe pro plan** ✅ **done (verify flow, no webhook)**
+**Phase 5 — Stripe pro plan** ✅ **done (webhook flow)**
 
 - ✅ `POST /api/payments/checkout` → `window.location.href = session.url`,
-  `/payment/success` → `GET /api/payments/verify` (confirms with Stripe,
-  upserts `payments`, sets `plan: 'pro'`), admin transactions page reads
-  `payments`, `PlanSection` upgrade buttons, plan limits (2/5/5) enforced
-  with `getPlan()`.
-- ⬜ Optional hardening: verify the JWT on checkout/verify so only the payer
-  can trigger them (currently public).
+  Stripe → `POST /api/payments/webhook` (raw body + signature check →
+  upserts `payments`, sets `plan: 'pro'`), `/payment/success` polls
+  `GET /api/payments/status`, admin transactions page reads `payments`,
+  `PlanSection` upgrade buttons, plan limits (2/5/5) enforced with
+  `getPlan()`.
+- ✅ Verified locally: signature accept/reject, unpaid/unknown events
+  acknowledged with 200 and ignored, status endpoint read-only.
+- ⬜ **User setup step**: fill `STRIPE_WEBHOOK_SECRET` in the server `.env`
+  (dashboard signing secret, or `stripe listen` for local dev) — see §9.
+- ⬜ Optional hardening: verify the JWT on checkout/status so only the
+  payer can call them (currently public reads).
 
 **Phase 6 — Route protection & polish**
 
@@ -641,13 +662,19 @@ Notes:
   (`router.refresh()` or a small `setInterval`), not websockets.
 - **D7 — Snapshots in `applications`** (tuitionTitle, subject, fee, tutorEmail)
   so student lists render without joins and ownership checks stay one-line.
-- **D8 — Stripe uses a verify endpoint, NOT a webhook.** The success page
-  calls `GET /api/payments/verify?sessionId=…`; the server re-checks the
-  session with Stripe, upserts `payments` (unique `stripeSessionId` index =
-  idempotent) and sets `plan: 'pro'`. No `STRIPE_WEBHOOK_SECRET`, no raw-body
-  route. *Tradeoff: the plan only flips when the payer actually visits the
-  success page — fine for an assignment; a webhook would be the production
-  answer.*
+- **D8 — Stripe uses a webhook as the source of truth** (changed from an
+  earlier verify-endpoint design). Stripe POSTs `checkout.session.completed`
+  to `POST /api/payments/webhook`, which is mounted with `express.raw()`
+  **before** `express.json()` and verified with
+  `stripe.webhooks.constructEvent(rawBody, stripe-signature,
+  STRIPE_WEBHOOK_SECRET)`. The handler upserts `payments` (unique
+  `stripeSessionId` index = idempotent across Stripe's retries) and sets
+  `plan: 'pro'`. The success page does **not** write anything — it only
+  polls the read-only `GET /api/payments/status?sessionId=…` until the
+  webhook's row appears (amber "processing" + Check again after ~18s).
+  *Tradeoffs: webhook delivery must be reachable (Stripe dashboard URL in
+  prod, `stripe listen` locally — see §9), which is why the success page
+  tolerates a slow/absent delivery instead of failing.*
 
 ## 13. Known Issues (fix during the roadmap)
 
@@ -699,6 +726,11 @@ Notes:
     7.1). The profile flow is currently only name + image + password (the
     permission matrix row was corrected to match). Either implement the
     fields or drop them from the spec.
+13. **`STRIPE_WEBHOOK_SECRET` value is empty** (key added, no value) — until
+    it is filled in (§9), every Stripe delivery is rejected with 500, the
+    success page stays on "processing", and no one becomes Pro. Local dev
+    also needs `stripe listen --forward-to localhost:5000/api/payments/webhook`.
+    The server prints a startup warning while this is missing.
 
 ## 14. Next Recommended Tasks (in order)
 
@@ -706,16 +738,19 @@ Notes:
    `src/lib/api.ts` / `actions.ts` attach the Bearer token → server
    `verifyToken` / `requireRole` (`jose`) → replace every `TODO(Phase 0)`
    query/body email with `req.user`. This closes known issue #9.
-2. **Phase 6 guard**: dashboard route protection (no session → `/login`,
+2. **Fill `STRIPE_WEBHOOK_SECRET`** (issue #13, 2-minute config task):
+   dashboard signing secret or `stripe listen` — until then Pro upgrades
+   never complete (§9 has the steps).
+3. **Phase 6 guard**: dashboard route protection (no session → `/login`,
    role mismatch → own dashboard) + auth redirects (issue #1) + the
    `/register` link (issue #4).
-3. **Phase 1**: admin users API + `dashboard/admin/users` table (last
+4. **Phase 1**: admin users API + `dashboard/admin/users` table (last
    placeholder page).
-4. **Phase 4 backend**: query-param filters on `GET /api/tuitions` + wire
+5. **Phase 4 backend**: query-param filters on `GET /api/tuitions` + wire
    the Hero search to `/tuitions?q=…`.
-5. Cleanup pass (issues #6, #11): delete dead Stripe sample code, unused
+6. Cleanup pass (issues #6, #11): delete dead Stripe sample code, unused
    deps/env, fix or remove `usersCollection`.
-6. Decide Google login (issue #3) and `phone`/`bio` (issue #12), then a
+7. Decide Google login (issue #3) and `phone`/`bio` (issue #12), then a
    final manual test of the full flows (signup → post → approve → apply →
    accept → upgrade).
 
@@ -724,8 +759,10 @@ Notes:
 *Last updated: 2026-11-23 — full project re-read and AGENTS.md brought in
 line with the actual code: tuitions/applications/saved/payments APIs and all
 dashboard pages are implemented, custom loading and error routes are added,
-IMGBB uploads cover profile photos and tuition banners, Stripe runs on a
-verify endpoint (no webhook, D8), plan limits (2 posts / 5 bookmarks / 5
+IMGBB uploads cover profile photos and tuition banners, Stripe now runs on a
+**webhook** (D8: signature-verified raw-body endpoint is the source of
+truth; the success page only polls a read-only status endpoint — the old
+verify endpoint was removed), plan limits (2 posts / 5 bookmarks / 5
 applications) are enforced, and the remaining gaps are JWT middleware
-(Phase 0), route protection, admin user management, and cleanup (see sections
-10–14).*
+(Phase 0), filling `STRIPE_WEBHOOK_SECRET`, route protection, admin user
+management, and cleanup (see sections 10–14).*
