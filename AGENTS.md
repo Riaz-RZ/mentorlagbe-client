@@ -708,9 +708,9 @@ Notes:
 
 ## 13. Known Issues (fix during the roadmap)
 
-1. **No redirect after auth**: `LoginForm` sends `callbackURL: "/"` (should be
-   `/dashboard/{role}`) and `SignupForm` uses `callbackURL: "/login"` (new
-   users land back on login instead of their dashboard).
+1. **Login redirect**: `LoginForm` sends `callbackURL: "/"` (should be
+   `/dashboard/{role}`). Signup now explicitly redirects to `/login` after
+   account creation and does not auto-sign-in.
 2. ~~**No dashboard route protection**~~ ✅ **resolved** — student, tutor,
    and admin layouts use the server-side `requireRole` guard.
 3. **Google login will fail** — no Google OAuth provider configured in Better

@@ -29,6 +29,7 @@ export const auth = betterAuth({
     },
     emailAndPassword: {
         enabled: true,
+        autoSignIn: false,
     },
 
     // Admin plugin -> /api/auth/admin/* endpoints (list users, set role,

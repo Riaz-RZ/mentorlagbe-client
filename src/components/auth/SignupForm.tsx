@@ -3,6 +3,7 @@
 
 import { useState, type FormEvent, type ChangeEvent } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
     ArrowLeft,
     Eye,
@@ -34,6 +35,7 @@ import GoogleMark from "@/components/auth/GoogleMark";
 type UserRole = "student" | "tutor";
 
 export default function SignupForm() {
+    const router = useRouter();
     const [role, setRole] = useState<UserRole>("student");
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -96,6 +98,8 @@ export default function SignupForm() {
             }
 
             toast.success("Account created successfully!");
+            await new Promise((resolve) => setTimeout(resolve, 800));
+            router.replace("/login");
 
         } catch (error) {
             toast.error(
