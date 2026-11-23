@@ -193,7 +193,7 @@ export default function HowItWorksPage() {
                 <div className="absolute -right-32 -top-32 -z-10 h-96 w-96 rounded-full bg-emerald-400/10 blur-3xl" />
                 <div className="absolute -bottom-40 -left-32 -z-10 h-96 w-96 rounded-full bg-emerald-400/10 blur-3xl" />
 
-                <div className="surface-3d mx-auto max-w-7xl rounded-3xl border border-primary/20 bg-card/80 px-5 py-20 text-center sm:px-8 sm:py-28">
+                <div className="surface-3d my-6 mx-auto max-w-7xl rounded-3xl border border-primary/20 bg-card/80 px-5 py-20 text-center sm:px-8 sm:py-28">
                     <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-medium text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-400">
                         <Sparkles size={16} />
                         Simple Steps, Better Connections
