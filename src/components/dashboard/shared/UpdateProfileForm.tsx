@@ -81,7 +81,6 @@ function ProfileForm({ user }: { user: SessionUser }) {
     const [isSavingPassword, setIsSavingPassword] = useState(false);
 
     const fileRef = useRef<HTMLInputElement>(null);
-
     // Pick a photo -> upload to IMGBB -> keep the URL for "Save Changes".
     const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];

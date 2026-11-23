@@ -12,7 +12,7 @@ const DashboardLayout = ({children}: {children: React.ReactNode}) => {
                 <SidebarInset className="min-w-0 bg-background">
                     <DashboardHeader />
 
-                    <div className="min-w-0 flex-1 px-4 pb-8 pt-4 lg:px-8 lg:pt-8">
+                    <div className="min-w-0 flex-1 px-4 pb-8 pt-4 transition-colors lg:px-8 lg:pt-8 **:data-[slot=card]:border-primary/20 **:data-[slot=card]:bg-linear-to-br **:data-[slot=card]:from-card **:data-[slot=card]:via-card **:data-[slot=card]:to-primary/5 **:data-[slot=card]:shadow-lg **:data-[slot=card]:shadow-primary/5 **:data-[slot=card]:transition-[transform,box-shadow] **:data-[slot=card]:duration-300 [&_[data-slot=card]:hover]:transform-[perspective(1200px)_rotateX(1deg)_translateY(-2px)] [&_[data-slot=card]:hover]:shadow-xl **:data-[slot=button]:shadow-sm **:data-[slot=button]:transition-[transform,box-shadow] [&_[data-slot=button]:hover]:-translate-y-0.5 [&_[data-slot=button]:hover]:shadow-md **:data-[slot=table-row]:transition-colors [&_[data-slot=table-row]:hover]:bg-primary/5">
                         {children}
                     </div>
                 </SidebarInset>

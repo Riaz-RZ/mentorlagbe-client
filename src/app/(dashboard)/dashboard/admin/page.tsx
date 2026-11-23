@@ -21,6 +21,7 @@ import { apiGet } from "@/lib/api";
 import { Skeleton } from "@/components/ui/skeleton";
 
 import { StatCard, ActionRow } from "@/components/dashboard/shared/OverviewCards";
+import DashboardPageHeader from "@/components/dashboard/shared/DashboardPageHeader";
 
 // Shape returned by GET /api/users/stats.
 interface AdminStats {
@@ -105,15 +106,12 @@ const AdminDashboardPage = () => {
     return (
         <div className="space-y-5">
             {/* ================= Header ================= */}
-            <div>
-                <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
-                    System Administration
-                </h1>
-                <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                    Platform metrics, tuition-moderation queue, user roles, and
-                    payment volume.
-                </p>
-            </div>
+            <DashboardPageHeader
+                eyebrow="ADMIN CONTROL CENTER"
+                title="System Administration"
+                description="Platform metrics, tuition-moderation queue, user roles, and payment volume."
+                icon={ShieldCheck}
+            />
 
             {/* ================= Stat cards ================= */}
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">

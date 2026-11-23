@@ -11,6 +11,7 @@ import {
     Clock,
     Crown,
     FileText,
+    GraduationCap,
     Search,
     TrendingUp,
 } from "lucide-react";
@@ -31,6 +32,7 @@ import {
     StatCard,
     ActionRow,
 } from "@/components/dashboard/shared/OverviewCards";
+import DashboardPageHeader from "@/components/dashboard/shared/DashboardPageHeader";
 
 // One application document (same shape as My Applications).
 interface Application {
@@ -114,28 +116,24 @@ const StudentDashboardPage = () => {
     return (
         <div className="space-y-5">
             {/* ================= Welcome header ================= */}
-            <div className="flex flex-wrap items-start justify-between gap-4">
-                <div>
-                    <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
-                        Welcome back, {studentName}! 👋
-                    </h1>
-                    <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                        Track your applied tuition applications, reviews, and
-                        learning journey.
-                    </p>
-                </div>
-
-                <Link
-                    href="/tuitions"
-                    className={buttonVariants({
-                        className:
-                            "gap-2 bg-emerald-600 text-white hover:bg-emerald-700",
-                    })}
-                >
-                    <Search className="size-4" />
-                    Browse Tuitions
-                </Link>
-            </div>
+            <DashboardPageHeader
+                eyebrow="STUDENT DASHBOARD"
+                title={`Welcome back, ${studentName}!`}
+                description="Track your tuition applications, reviews, and learning journey."
+                icon={GraduationCap}
+                action={
+                    <Link
+                        href="/tuitions"
+                        className={buttonVariants({
+                            className:
+                                "gap-2 bg-emerald-600 text-white shadow-lg shadow-emerald-900/15 transition-transform hover:-translate-y-0.5 hover:bg-emerald-700",
+                        })}
+                    >
+                        <Search className="size-4" />
+                        Browse Tuitions
+                    </Link>
+                }
+            />
 
             {/* ================= Stat cards ================= */}
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -183,7 +181,7 @@ const StudentDashboardPage = () => {
             </div>
 
             {/* ================= Quick Actions ================= */}
-            <Card className="border-slate-200 dark:border-slate-800">
+            <Card className="border-primary/15 bg-linear-to-br from-card via-card to-primary/5 shadow-lg shadow-primary/5">
                 <CardHeader>
                     <CardTitle className="text-lg font-semibold">
                         Quick Actions
@@ -221,7 +219,7 @@ const StudentDashboardPage = () => {
             {/* ================= Boost banner ================= */}
             <Link
                 href="/dashboard/student/profile"
-                className="flex items-start gap-3 rounded-xl border border-emerald-200 bg-emerald-50 p-4 transition-colors hover:bg-emerald-100 dark:border-emerald-900 dark:bg-emerald-950 dark:hover:bg-emerald-950/70"
+                className="flex items-start gap-3 rounded-xl border border-primary/20 bg-linear-to-r from-primary/10 via-card to-card p-4 shadow-md shadow-primary/5 transition-[transform,box-shadow] duration-300 hover:-translate-y-1 hover:shadow-xl"
             >
                 <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-emerald-600 text-white">
                     <TrendingUp className="size-4" />

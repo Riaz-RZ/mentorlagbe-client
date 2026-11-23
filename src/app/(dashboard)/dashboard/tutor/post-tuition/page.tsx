@@ -3,7 +3,7 @@
 import { useState, type FormEvent, type ChangeEvent } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Loader2, Send } from "lucide-react";
+import { FilePlus2, Loader2, Send } from "lucide-react";
 
 import { authClient } from "@/lib/auth-client";
 import { apiPost, isPlanLimitError } from "@/lib/actions";
@@ -26,6 +26,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
+import DashboardPageHeader from "@/components/dashboard/shared/DashboardPageHeader";
 
 const initialForm = {
     title: "",
@@ -110,7 +111,13 @@ const PostTuitionPage = () => {
     };
 
     return (
-        <div className="mx-auto max-w-3xl">
+        <div className="mx-auto max-w-3xl space-y-5">
+            <DashboardPageHeader
+                eyebrow="TUTOR WORKSPACE"
+                title="Post a Tuition"
+                description="Create a listing and share your teaching opportunity with students."
+                icon={FilePlus2}
+            />
             <Card className="border-slate-200 dark:border-slate-800">
                 <CardHeader>
                     <CardTitle className="text-xl font-bold">Post a Tuition</CardTitle>

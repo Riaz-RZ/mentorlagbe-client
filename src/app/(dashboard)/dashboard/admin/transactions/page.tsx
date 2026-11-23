@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Crown, Mail } from "lucide-react";
+import { CreditCard, Crown, Mail } from "lucide-react";
 
 import { authClient } from "@/lib/auth-client";
 import { apiGet } from "@/lib/api";
@@ -18,6 +18,7 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table";
+import DashboardPageHeader from "@/components/dashboard/shared/DashboardPageHeader";
 
 // One row of GET /api/payments (Stripe webhook writes these in Phase 5).
 interface Payment {
@@ -115,27 +116,24 @@ const TransactionsPage = () => {
     return (
         <div className="space-y-5">
             {/* ================= Header ================= */}
-            <div>
-                <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
-                    Transaction History
-                </h1>
-                <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                    Audit trail of Pro subscription-upgrades processed through
-                    Stripe checkout.
-                </p>
-            </div>
+            <DashboardPageHeader
+                eyebrow="ADMIN CONTROL CENTER"
+                title="Transaction History"
+                description="Audit trail of Pro subscription upgrades processed through Stripe checkout."
+                icon={CreditCard}
+            />
 
             {/* ================= Table ================= */}
             {isLoading ? (
-                <div className="space-y-3 rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+                <div className="space-y-3 rounded-xl border border-primary/20 bg-linear-to-br from-card via-card to-primary/5 p-4 shadow-lg shadow-primary/5">
                     {Array.from({ length: 4 }).map((_, i) => (
                         <Skeleton key={i} className="h-12 w-full" />
                     ))}
                 </div>
             ) : payments.length === 0 ? (
                 /* Empty state - no Stripe payments yet */
-                <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-slate-300 bg-white py-16 text-center dark:border-slate-700 dark:bg-slate-900">
-                    <span className="flex size-12 items-center justify-center rounded-full bg-emerald-50 text-emerald-600 dark:bg-emerald-950">
+                <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-primary/25 bg-linear-to-br from-card to-primary/5 py-16 text-center shadow-inner">
+                    <span className="flex size-14 items-center justify-center rounded-2xl border border-primary/20 bg-primary/10 text-primary shadow-lg shadow-primary/10 transform-[perspective(700px)_rotateY(10deg)]">
                         <Crown className="size-6" />
                     </span>
                     <h2 className="mt-4 text-lg font-semibold text-slate-900 dark:text-slate-100">
@@ -147,7 +145,7 @@ const TransactionsPage = () => {
                     </p>
                 </div>
             ) : (
-                <div className="overflow-hidden rounded-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
+                <div className="overflow-hidden rounded-xl border border-primary/20 bg-linear-to-br from-card via-card to-primary/5 shadow-xl shadow-primary/5">
                     <Table>
                         <TableHeader>
                             <TableRow className="bg-slate-50 hover:bg-slate-50 dark:bg-slate-800/60 dark:hover:bg-slate-800/60">

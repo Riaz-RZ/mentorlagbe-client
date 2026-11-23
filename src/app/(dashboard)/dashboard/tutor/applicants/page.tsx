@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Check, Inbox, Mail, Phone, RefreshCw, X } from "lucide-react";
+import { Check, Inbox, Mail, Phone, RefreshCw, Users, X } from "lucide-react";
 
 import { authClient } from "@/lib/auth-client";
 import { apiGet } from "@/lib/api";
@@ -27,6 +27,7 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table";
+import DashboardPageHeader from "@/components/dashboard/shared/DashboardPageHeader";
 
 // One application document (same shape as the student side).
 interface Application {
@@ -164,28 +165,24 @@ const ManageApplicantsPage = () => {
     return (
         <div className="space-y-4">
             {/* Header with Refresh button (top right) */}
-            <div className="flex flex-wrap items-center justify-between gap-3">
-                <div>
-                    <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
-                        Manage Applicants
-                    </h1>
-                    <p className="text-sm text-slate-500 dark:text-slate-400">
-                        Review candidate applications submitted to your
-                        courses and approve or decline students.
-                    </p>
-                </div>
-
-                <Button
-                    variant="outline"
-                    onClick={() => {
-                        setIsLoading(true);
-                        setRefreshKey((key) => key + 1);
-                    }}
-                >
-                    <RefreshCw className="size-4" />
-                    Refresh
-                </Button>
-            </div>
+            <DashboardPageHeader
+                eyebrow="TUTOR WORKSPACE"
+                title="Manage Applicants"
+                description="Review candidate applications submitted to your courses and approve or decline students."
+                icon={Users}
+                action={
+                    <Button
+                        variant="outline"
+                        onClick={() => {
+                            setIsLoading(true);
+                            setRefreshKey((key) => key + 1);
+                        }}
+                    >
+                        <RefreshCw className="size-4" />
+                        Refresh
+                    </Button>
+                }
+            />
 
             <Card className="border-slate-200 dark:border-slate-800">
                 <CardHeader>

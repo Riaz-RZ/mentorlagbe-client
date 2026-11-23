@@ -12,12 +12,12 @@ import SignupForm from "@/components/auth/SignupForm";
 
 export default function SignupPage() {
   return (
-    <main className="flex min-h-screen items-center bg-slate-50 px-4 py-1 dark:bg-slate-950 sm:px-6 lg:py-5">
+    <main className="flex min-h-screen items-center bg-linear-to-br from-background via-background to-primary/10 px-4 py-1 sm:px-6 lg:py-5">
       <div className="mx-auto grid w-full max-w-6xl items-center gap-2 lg:grid-cols-2 lg:items-start lg:gap-8">
 
         {/* Left Side - Brand Section */}
         <section className="hidden lg:block">
-          <div className="relative overflow-hidden rounded-3xl border border-border bg-card p-7 text-foreground shadow-2xl shadow-foreground/5 lg:p-8">
+          <div className="surface-3d relative overflow-hidden rounded-3xl border border-border bg-card p-7 text-foreground shadow-2xl shadow-foreground/5 lg:p-8">
 
             {/* Decorative shapes */}
             <div className="absolute -right-20 -top-20 size-72 rounded-full bg-primary/10" />

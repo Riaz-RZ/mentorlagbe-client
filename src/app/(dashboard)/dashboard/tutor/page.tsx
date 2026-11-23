@@ -32,6 +32,7 @@ import {
     StatCard,
     ActionRow,
 } from "@/components/dashboard/shared/OverviewCards";
+import DashboardPageHeader from "@/components/dashboard/shared/DashboardPageHeader";
 
 // Only the fields this page needs.
 interface TuitionPost {
@@ -135,28 +136,24 @@ const TutorDashboardPage = () => {
     return (
         <div className="space-y-5">
             {/* ================= Welcome header ================= */}
-            <div className="flex flex-wrap items-start justify-between gap-4">
-                <div>
-                    <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
-                        Welcome back, {tutorName}! 👋
-                    </h1>
-                    <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                        Manage your tuition posts, review applicants, and grow
-                        your teaching journey.
-                    </p>
-                </div>
-
-                <Link
-                    href="/dashboard/tutor/post-tuition"
-                    className={buttonVariants({
-                        className:
-                            "gap-2 bg-emerald-600 text-white hover:bg-emerald-700",
-                    })}
-                >
-                    <FilePlus2 className="size-4" />
-                    Post a Tuition
-                </Link>
-            </div>
+            <DashboardPageHeader
+                eyebrow="TUTOR DASHBOARD"
+                title={`Welcome back, ${tutorName}!`}
+                description="Manage your tuition posts, review applicants, and grow your teaching journey."
+                icon={BookOpen}
+                action={
+                    <Link
+                        href="/dashboard/tutor/post-tuition"
+                        className={buttonVariants({
+                            className:
+                                "gap-2 bg-emerald-600 text-white shadow-lg shadow-emerald-900/15 hover:bg-emerald-700",
+                        })}
+                    >
+                        <FilePlus2 className="size-4" />
+                        Post a Tuition
+                    </Link>
+                }
+            />
 
             {/* ============ Waiting-for-approval alert ============ */}
             {!isLoading && pendingReview > 0 && (

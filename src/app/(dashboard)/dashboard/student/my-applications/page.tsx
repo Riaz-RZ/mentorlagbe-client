@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Inbox, RefreshCw } from "lucide-react";
+import { ClipboardList, Inbox, RefreshCw } from "lucide-react";
 
 import { authClient } from "@/lib/auth-client";
 import { apiGet } from "@/lib/api";
@@ -26,6 +26,7 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table";
+import DashboardPageHeader from "@/components/dashboard/shared/DashboardPageHeader";
 
 // One application document from POST /api/applications.
 interface Application {
@@ -106,31 +107,28 @@ const MyApplicationsPage = () => {
     }, [isPending, studentEmail, refreshKey, router]);
 
     return (
-        <div className="space-y-4">
-            {/* Header with Refresh button (top right) */}
-            <div className="flex flex-wrap items-center justify-between gap-3">
-                <div>
-                    <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
-                        My Applications
-                    </h1>
-                    <p className="text-sm text-slate-500 dark:text-slate-400">
-                        Tuitions you applied for, with their current status.
-                    </p>
-                </div>
+        <div className="space-y-5">
+            <DashboardPageHeader
+                eyebrow="APPLICATION TRACKER"
+                title="My Applications"
+                description="Tuitions you applied for, with their current status."
+                icon={ClipboardList}
+                action={
+                    <Button
+                        variant="outline"
+                        className="shadow-md transition-transform hover:-translate-y-0.5 hover:shadow-lg"
+                        onClick={() => {
+                            setIsLoading(true);
+                            setRefreshKey((key) => key + 1);
+                        }}
+                    >
+                        <RefreshCw className="size-4" />
+                        Refresh
+                    </Button>
+                }
+            />
 
-                <Button
-                    variant="outline"
-                    onClick={() => {
-                        setIsLoading(true);
-                        setRefreshKey((key) => key + 1);
-                    }}
-                >
-                    <RefreshCw className="size-4" />
-                    Refresh
-                </Button>
-            </div>
-
-            <Card className="border-slate-200 dark:border-slate-800">
+            <Card className="border-primary/15 bg-gradient-to-br from-card via-card to-primary/5 shadow-xl shadow-primary/5">
                 <CardHeader>
                     <CardTitle className="text-lg font-semibold">
                         Applications
@@ -149,8 +147,10 @@ const MyApplicationsPage = () => {
                             ))}
                         </div>
                     ) : applications.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center gap-3 py-10 text-center">
-                            <Inbox className="size-10 text-slate-400" />
+                        <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-primary/20 bg-background/50 py-12 text-center shadow-inner">
+                            <span className="flex size-16 items-center justify-center rounded-2xl border border-primary/20 bg-primary/10 text-primary shadow-lg shadow-primary/10 [transform:perspective(700px)_rotateY(10deg)]">
+                                <Inbox className="size-8" />
+                            </span>
                             <p className="text-sm text-slate-500 dark:text-slate-400">
                                 You haven&apos;t applied to any tuition yet.
                             </p>
@@ -176,7 +176,10 @@ const MyApplicationsPage = () => {
 
                             <TableBody>
                                 {applications.map((application) => (
-                                    <TableRow key={application._id}>
+                                    <TableRow
+                                        key={application._id}
+                                        className="transition-colors hover:bg-primary/5"
+                                    >
                                         <TableCell className="font-medium">
                                             {application.tuitionTitle}
                                         </TableCell>

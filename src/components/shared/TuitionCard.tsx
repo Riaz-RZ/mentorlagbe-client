@@ -33,7 +33,7 @@ const TuitionCard = ({ tuition }: { tuition: Tuition }) => {
     const hasImage = tuition.bannerImage.startsWith("http");
 
     return (
-        <Card className="group gap-0 py-0">
+        <Card className="surface-3d group gap-0 py-0">
             {/* Image + overlays */}
             <div className="p-4 pb-0">
                 <div className="relative aspect-16/10 overflow-hidden rounded-xl bg-slate-100 dark:bg-slate-800">

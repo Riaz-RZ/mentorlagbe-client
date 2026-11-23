@@ -97,7 +97,7 @@ export default function LoginForm() {
     };
 
     return (
-        <Card className="w-full border border-slate-200/80 bg-white shadow-xl shadow-blue-950/5 dark:border-slate-700 dark:bg-slate-900">
+        <Card className="surface-3d w-full border border-slate-200/80 bg-white shadow-xl shadow-blue-950/5 dark:border-slate-700 dark:bg-slate-900">
             <CardHeader className="space-y-2 pb-6 text-center">
                 <div className="mx-auto mb-2 flex size-14 items-center justify-center rounded-2xl bg-blue-100 text-blue-600 dark:bg-blue-950 dark:text-sky-400">
                     <LockKeyhole className="size-7" />

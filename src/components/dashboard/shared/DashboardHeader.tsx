@@ -138,7 +138,7 @@ export default function DashboardHeader() {
     };
 
     return (
-        <header className="sticky top-0 z-30 h-16 w-full border-b border-slate-200/80 bg-white/95 backdrop-blur-md dark:border-slate-800 dark:bg-slate-950/95">
+        <header className="sticky top-0 z-30 h-16 w-full border-b border-primary/15 bg-card/95 shadow-md shadow-foreground/5 backdrop-blur-md">
             <div className="flex h-full items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
 
                 {/* Sidebar Toggle + Page Title */}

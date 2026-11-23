@@ -21,7 +21,7 @@ const Hero = () => {
     };
 
     return (
-        <section className="relative isolate overflow-hidden rounded-3xl border border-border bg-linear-to-br from-card via-card to-primary/10 px-5 py-8 shadow-sm sm:px-8 sm:py-10 lg:px-12 lg:py-12">
+        <section className="relative isolate overflow-hidden rounded-3xl border border-border bg-linear-to-br from-card via-card to-primary/10 px-5 py-8 shadow-xl shadow-primary/5 sm:px-8 sm:py-10 lg:px-12 lg:py-12">
             <div
                 aria-hidden="true"
                 className="pointer-events-none absolute -right-24 -top-28 size-80 rounded-full bg-primary/10 blur-3xl"
@@ -62,7 +62,7 @@ const Hero = () => {
                     </div>
                 </div>
 
-                <div className="rounded-2xl border border-border bg-background/90 p-4 shadow-lg backdrop-blur-sm sm:p-6">
+                <div className="surface-3d rounded-2xl border border-border bg-background/90 p-4 shadow-lg backdrop-blur-sm sm:p-6">
                     <div className="mb-5">
                         <h2 className="text-lg font-semibold text-foreground">
                             Start your search

@@ -109,7 +109,7 @@ export default function SignupForm() {
     };
 
     return (
-        <Card className="gap-1 border-slate-200/80 py-2 shadow-xl shadow-slate-200/50 dark:border-slate-800 dark:bg-slate-900 dark:shadow-none lg:gap-2 lg:py-3">
+        <Card className="surface-3d gap-1 border-slate-200/80 py-2 shadow-xl shadow-slate-200/50 dark:border-slate-800 dark:bg-slate-900 dark:shadow-none lg:gap-2 lg:py-3">
             <CardHeader className="relative lg:px-8">
                 <CardTitle className="text-lg font-bold tracking-tight sm:text-xl lg:text-2xl">
                     Create your account

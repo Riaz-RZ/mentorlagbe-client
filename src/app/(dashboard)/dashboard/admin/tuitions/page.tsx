@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { MapPin, Monitor } from "lucide-react";
+import { ClipboardCheck, MapPin, Monitor } from "lucide-react";
 
 import { apiGet } from "@/lib/api";
 import { apiPatch } from "@/lib/actions";
@@ -20,6 +20,7 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table";
+import DashboardPageHeader from "@/components/dashboard/shared/DashboardPageHeader";
 
 import { type Tuition } from "@/components/dashboard/tutor/TuitionDialogs";
 
@@ -108,15 +109,12 @@ const TuitionApprovalsPage = () => {
     return (
         <div className="space-y-6">
             {/* Page heading */}
-            <div>
-                <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
-                    Tuition Moderation
-                </h1>
-                <p className="text-sm text-slate-500 dark:text-slate-400">
-                    Review, approve, or reject tuition listings submitted by tutors
-                    before they become visible to students.
-                </p>
-            </div>
+            <DashboardPageHeader
+                eyebrow="ADMIN CONTROL CENTER"
+                title="Tuition Moderation"
+                description="Review, approve, or reject tuition listings submitted by tutors before they become visible to students."
+                icon={ClipboardCheck}
+            />
 
             {/* Filter tabs with counts */}
             <Tabs value={tab} onValueChange={(value) => setTab(value as TabKey)}>

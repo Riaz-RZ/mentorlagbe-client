@@ -27,6 +27,7 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table";
+import DashboardPageHeader from "@/components/dashboard/shared/DashboardPageHeader";
 
 import {
     DeleteTuitionDialog,
@@ -118,21 +119,18 @@ const MyTuitionsPage = () => {
     return (
         <div className="space-y-4">
             {/* Header with the Post a Tuition button (top right) */}
-            <div className="flex flex-wrap items-center justify-between gap-3">
-                <div>
-                    <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
-                        My Tuitions
-                    </h1>
-                    <p className="text-sm text-slate-500 dark:text-slate-400">
-                        Tuitions you have posted, with their approval status.
-                    </p>
-                </div>
-
-                <Button onClick={() => router.push("/dashboard/tutor/post-tuition")}>
-                    <FilePlus2 className="size-4" />
-                    Post a Tuition
-                </Button>
-            </div>
+            <DashboardPageHeader
+                eyebrow="TUTOR WORKSPACE"
+                title="My Tuitions"
+                description="Tuitions you have posted, with their approval status."
+                icon={FilePlus2}
+                action={
+                    <Button onClick={() => router.push("/dashboard/tutor/post-tuition")}>
+                        <FilePlus2 className="size-4" />
+                        Post a Tuition
+                    </Button>
+                }
+            />
 
             <Card className="border-slate-200 dark:border-slate-800">
                 <CardHeader>

@@ -102,7 +102,7 @@ const TuitionsPage = () => {
     return (
         <main className="mx-auto w-full max-w-6xl px-4 py-10 sm:px-6 lg:px-8">
             {/* ---------- Heading ---------- */}
-            <div className="mb-8 space-y-3 text-center">
+            <div className="surface-3d mb-8 space-y-3 rounded-3xl border border-primary/20 bg-gradient-to-br from-card via-card to-primary/10 px-5 py-8 text-center shadow-xl sm:px-8">
                 <Badge
                     variant="outline"
                     className="border-emerald-200 bg-emerald-50 px-3 py-1 text-[11px] tracking-wider text-emerald-700 uppercase dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-300"
@@ -119,7 +119,7 @@ const TuitionsPage = () => {
             </div>
 
             {/* ---------- Filter bar ---------- */}
-            <Card className="mb-8">
+            <Card className="surface-3d mb-8">
                 <CardContent>
                     {/* Search row */}
                     <form onSubmit={handleSearch} className="mb-5 flex gap-2">

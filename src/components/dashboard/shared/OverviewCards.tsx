@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 
 // =============================================================
-// Small pieces shared by the student and tutor dashboard
+// Small pieces shared by the student, tutor, and admin dashboard
 // overview pages: a stat card and a quick-action row.
 // =============================================================
 
@@ -28,7 +28,9 @@ export function StatCard({
     pillClass?: string;
 }) {
     return (
-        <Card className="border-slate-200 dark:border-slate-800">
+        <Card
+            className="border-primary/20 bg-linear-to-br from-card via-card to-primary/5 shadow-lg shadow-primary/5 transition-[transform,box-shadow] duration-300 hover:transform-[perspective(1000px)_rotateX(2deg)_rotateY(-1deg)_translateY(-4px)] hover:shadow-xl"
+        >
             <CardContent>
                 <div className="flex items-start justify-between gap-2">
                     <p className="text-sm text-slate-500 dark:text-slate-400">
@@ -90,7 +92,7 @@ export function ActionRow({
                 <Icon className="size-4" />
             </span>
             <span className="min-w-0 flex-1">
-                <span className="block text-sm font-medium text-slate-900 dark:text-slate-100">
+                <span className="block text-sm font-medium text-slate-900 dark:text-slate-100 dark:group-hover:text-muted-foreground">
                     {title}
                 </span>
                 <span className="block text-xs text-slate-500 dark:text-slate-400">
@@ -107,7 +109,7 @@ export function ActionRow({
             <button
                 type="button"
                 onClick={onClick}
-                className="flex w-full items-center gap-3 rounded-lg border border-slate-200 p-3 text-left transition-colors hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-900"
+                className="group flex w-full items-center gap-3 rounded-lg border border-primary/20 bg-card/80 p-3 text-left shadow-sm transition-[transform,box-shadow] duration-300 hover:transform-[perspective(900px)_rotateY(-1deg)_translateY(-2px)] hover:shadow-md"
             >
                 {content}
             </button>
@@ -117,7 +119,7 @@ export function ActionRow({
     return (
         <Link
             href={href}
-            className="flex items-center gap-3 rounded-lg border border-slate-200 p-3 transition-colors hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-900"
+            className="group flex items-center gap-3 rounded-lg border border-primary/20 bg-card/80 p-3 shadow-sm transition-[transform,box-shadow] duration-300 hover:transform-[perspective(900px)_rotateY(-1deg)_translateY(-2px)] hover:shadow-md"
         >
             {content}
         </Link>

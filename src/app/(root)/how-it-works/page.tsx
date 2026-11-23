@@ -162,7 +162,7 @@ function StepCard({
     const Icon = step.icon;
 
     return (
-        <div className="group relative rounded-2xl border border-slate-200 bg-white p-6 transition-all duration-300 hover:-translate-y-1 hover:border-emerald-300 hover:shadow-xl hover:shadow-emerald-100/50 dark:border-slate-800 dark:bg-slate-900 dark:hover:border-emerald-500/40">
+        <div className="surface-3d group relative rounded-2xl border border-slate-200 bg-white p-6 transition-all duration-300 hover:border-emerald-300 dark:border-slate-800 dark:bg-slate-900 dark:hover:border-emerald-500/40">
             <div className="mb-6 flex items-center justify-between">
                 <span className="text-4xl font-bold tracking-tight text-muted-foreground/40">
                     {step.number}
@@ -193,7 +193,7 @@ export default function HowItWorksPage() {
                 <div className="absolute -right-32 -top-32 -z-10 h-96 w-96 rounded-full bg-emerald-400/10 blur-3xl" />
                 <div className="absolute -bottom-40 -left-32 -z-10 h-96 w-96 rounded-full bg-emerald-400/10 blur-3xl" />
 
-                <div className="mx-auto max-w-7xl px-5 py-20 text-center sm:px-8 sm:py-28">
+                <div className="surface-3d mx-auto max-w-7xl rounded-3xl border border-primary/20 bg-card/80 px-5 py-20 text-center sm:px-8 sm:py-28">
                     <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-medium text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-400">
                         <Sparkles size={16} />
                         Simple Steps, Better Connections
@@ -354,7 +354,7 @@ export default function HowItWorksPage() {
                         return (
                             <div
                                 key={feature.title}
-                                className="rounded-2xl border border-slate-200 bg-white p-6 transition-all hover:border-emerald-300 hover:shadow-lg hover:shadow-emerald-100/40 dark:border-slate-800 dark:bg-slate-900 dark:hover:border-emerald-500/40"
+                                className="surface-3d rounded-2xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900"
                             >
                                 <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400">
                                     <Icon size={23} />
@@ -399,7 +399,7 @@ export default function HowItWorksPage() {
                         {faqs.map((faq, index) => (
                             <details
                                 key={faq.question}
-                                className="group rounded-xl border border-slate-200 bg-white p-5 open:border-emerald-300 dark:border-slate-800 dark:bg-slate-900 dark:open:border-emerald-500/40"
+                                className="surface-3d group rounded-xl border border-slate-200 bg-white p-5 open:border-emerald-300 dark:border-slate-800 dark:bg-slate-900 dark:open:border-emerald-500/40"
                                 open={index === 0}
                             >
                                 <summary className="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-slate-900 marker:hidden dark:text-white">

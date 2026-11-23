@@ -6,7 +6,7 @@ import LoginForm from "@/components/auth/LoginForm";
 
 export default function LoginPage() {
     return (
-        <main className="min-h-screen bg-slate-50 dark:bg-slate-950">
+        <main className="min-h-screen bg-gradient-to-br from-background via-background to-primary/10">
             <div className="mx-auto grid min-h-screen max-w-7xl items-center gap-10 px-4 py-10 sm:px-6 lg:grid-cols-2 lg:gap-16 lg:px-8">
 
                 {/* Left Side - Branding */}

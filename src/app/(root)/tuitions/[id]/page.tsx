@@ -183,7 +183,7 @@ const TuitionDetailsPage = () => {
                 {/* ================= LEFT (2 cols) ================= */}
                 <div className="space-y-6 lg:col-span-2">
                     {/* Banner image */}
-                    <div className="relative aspect-video overflow-hidden rounded-xl bg-slate-100 dark:bg-slate-800">
+                    <div className="surface-3d relative aspect-video overflow-hidden rounded-xl bg-slate-100 dark:bg-slate-800">
                         {tuition.bannerImage.startsWith("http") ? (
                             <Image
                                 src={tuition.bannerImage}
@@ -288,7 +288,7 @@ const TuitionDetailsPage = () => {
                     </div>
 
                     {/* About This Tuition */}
-                    <Card>
+                    <Card className="surface-3d">
                         <CardContent className="space-y-3">
                             <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">
                                 About This Tuition
@@ -300,7 +300,7 @@ const TuitionDetailsPage = () => {
                     </Card>
 
                     {/* Student Reviews & Feedback */}
-                    <Card>
+                    <Card className="surface-3d">
                         <CardContent className="space-y-4">
                             <div className="flex items-start justify-between gap-4">
                                 <div>
@@ -341,7 +341,7 @@ const TuitionDetailsPage = () => {
 
                 {/* ================= RIGHT (sidebar) ================= */}
                 <div className="lg:col-span-1">
-                    <Card className="sticky top-6 space-y-5">
+                    <Card className="surface-3d sticky top-6 space-y-5">
                         <CardContent>
                             {/* Fee */}
                             <p className="text-xs font-medium tracking-wide text-slate-500 uppercase dark:text-slate-400">

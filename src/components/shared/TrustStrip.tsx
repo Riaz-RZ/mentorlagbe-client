@@ -30,7 +30,7 @@ const stats = [
 // =============================================================
 const TrustStrip = () => {
     return (
-        <section className="mt-8 rounded-2xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900">
+        <section className="surface-3d mt-8 rounded-2xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900">
             <div className="grid grid-cols-1 divide-y divide-slate-200 gap-6 sm:grid-cols-3 sm:divide-x sm:divide-y-0 dark:divide-slate-800">
                 {stats.map((stat) => (
                     <div

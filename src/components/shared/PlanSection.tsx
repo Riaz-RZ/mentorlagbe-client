@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { ArrowRight, Check, Loader2, Monitor } from "lucide-react";
+import { ArrowRight, Check, Loader2} from "lucide-react";
 
 import { authClient } from "@/lib/auth-client";
 import { apiPost } from "@/lib/actions";
@@ -88,7 +88,7 @@ const PlanSection = () => {
     };
 
     return (
-        <section className="mt-14 rounded-2xl bg-slate-50 px-4 py-12 dark:bg-slate-900/50 sm:px-6 lg:px-8">
+        <section className="mt-14 rounded-3xl border border-primary/15 bg-linear-to-br from-card via-card to-primary/5 px-4 py-12 shadow-xl shadow-primary/5 sm:px-6 lg:px-8">
             {/* ---------- Heading ---------- */}
             <div className="mx-auto max-w-2xl text-center">
                 <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100 sm:text-3xl">
@@ -103,7 +103,7 @@ const PlanSection = () => {
             {/* ---------- Cards ---------- */}
             <div className="mx-auto mt-10 grid max-w-4xl grid-cols-1 gap-6 md:grid-cols-2">
                 {/* ============ Starter (free) ============ */}
-                <div className="flex flex-col rounded-2xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900">
+                <div className="surface-3d flex flex-col rounded-2xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900">
                     <div className="flex items-center justify-between gap-2">
                         <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">
                             Starter Plan
@@ -155,7 +155,7 @@ const PlanSection = () => {
                 </div>
 
                 {/* ============ MentorLagbe PRO ============ */}
-                <div className="relative flex flex-col rounded-2xl border-2 border-emerald-500 bg-white p-6 dark:border-emerald-600 dark:bg-slate-900">
+                <div className="surface-3d relative flex flex-col rounded-2xl border-2 border-emerald-500 bg-white p-6 dark:border-emerald-600 dark:bg-slate-900">
                     {/* Recommended ribbon */}
                     <span className="absolute -top-3.5 left-1/2 flex -translate-x-1/2 items-center gap-1 rounded-full bg-emerald-600 px-4 py-1.5 text-xs font-semibold tracking-wide text-white shadow-sm">
                         ★ RECOMMENDED
