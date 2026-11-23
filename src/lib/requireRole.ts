@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 export const requireRole = async (role: string) => {
     const session = await auth.api.getSession({
         headers: await headers(),
+        query: { disableCookieCache: true },
     });
 
     if (!session) {

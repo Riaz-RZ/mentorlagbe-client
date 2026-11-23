@@ -104,8 +104,20 @@ export default function DashboardHeader() {
 
     const user = session?.user;
 
-    // Better Auth custom role
-    const userRole = user?.role as UserRole | undefined;
+    // Keep dashboard links within the current role area if the client session
+    // briefly omits the role while it is being refreshed.
+    const pathRole = pathname.split("/")[2];
+    const roleFromPath: UserRole | undefined =
+        pathRole === "student" || pathRole === "tutor" || pathRole === "admin"
+            ? pathRole
+            : undefined;
+    const sessionRole = user?.role;
+    const userRole: UserRole | undefined =
+        sessionRole === "student" ||
+        sessionRole === "tutor" ||
+        sessionRole === "admin"
+            ? sessionRole
+            : roleFromPath;
 
     const dashboardHref = userRole
         ? `/dashboard/${userRole}`

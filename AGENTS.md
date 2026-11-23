@@ -646,8 +646,9 @@ Notes:
 
 **Phase 6 — Route protection & polish**
 
-- ✅ Dashboard student/tutor/admin layouts enforce server-side role checks;
-  no session → `/login`, wrong role → `/unauthorized`.
+- ✅ Dashboard student/tutor/admin layouts enforce server-side role checks
+  using a fresh Better Auth session read (cookie cache bypassed); no session
+  → `/login`, wrong role → `/unauthorized`.
 - ⬜ Fix known issues (section 13): login/signup redirect, `/register` link,
   Google login decision, `users` vs `user` cleanup, dead Stripe sample code.
 
@@ -715,7 +716,8 @@ Notes:
    `/dashboard/{role}`). Signup now explicitly redirects to `/login` after
    account creation and does not auto-sign-in.
 2. ~~**No dashboard route protection**~~ ✅ **resolved** — student, tutor,
-   and admin layouts use the server-side `requireRole` guard.
+   and admin layouts use the server-side `requireRole` guard, which bypasses
+   the cookie cache when validating session state.
 3. **Google login will fail** — no Google OAuth provider configured in Better
    Auth env. The login button really calls `signIn.social({ provider:
    "google" })` (errors → "Google sign-in failed"); the signup Google button
