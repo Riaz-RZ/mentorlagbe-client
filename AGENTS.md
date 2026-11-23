@@ -88,7 +88,10 @@ Key frontend files:
 - `src/app/api/auth/[...all]/route.ts` — Better Auth HTTP handler (all auth endpoints live under `/api/auth/*`).
 - `src/app/api/checkout_sessions/route.ts` — **dead sample** Stripe route (hard-coded price ID, not called by any page — see known issues).
 - `src/components/auth/LoginForm.tsx`, `SignupForm.tsx` — wired to Better Auth (email/password + Google button).
-- `src/app/(root)/page.tsx` — homepage: `Hero` + `TrustStrip` + `FeaturedTuitions` + `PlanSection`.
+- `src/app/(root)/page.tsx` — homepage: `Hero` + `TrustStrip` +
+  `FeaturedTuitions` + `PlanSection` + `HomeHowItWorks` + `SubjectsAndStats`.
+- `src/components/shared/HomeHowItWorks.tsx` and `SubjectsAndStats.tsx` —
+  homepage student/tutor workflows, popular subjects, and live aggregate user counts.
 - `src/app/(root)/tuitions/page.tsx` — browse page (client-side search/subject/class/mode/fee filters), `tuitions/[id]` — detail page + apply dialog.
 - `src/app/(root)/pricing/page.tsx`, `how-it-works/page.tsx`, `payment/success/page.tsx` — pricing (PlanSection), static how-it-works, Stripe verify page.
 - `src/app/(dashboard)/layout.tsx` — dashboard shell (sidebar + header); student/tutor/admin child layouts enforce roles server-side.
@@ -127,7 +130,7 @@ mentorlagbe-server/
 │   │   └── requireRole.js     # role authorization middleware
 │   ├── routes/
 │   │   ├── healthRoutes.js    # GET /api/health
-│   │   ├── users.js           # GET /api/users/stats (admin), sample GET /api/users
+│   │   ├── users.js           # admin stats/users and public aggregate member counts
 │   │   ├── tuitions.js        # full tuition CRUD + moderation (implemented)
 │   │   ├── applications.js    # apply / list / accept-reject (implemented)
 │   │   ├── saved.js           # student bookmarks (implemented)
@@ -373,6 +376,7 @@ Base URL: `https://mentorlagbe-server-bay.vercel.app` (local development can ove
 | ------------- | ---------------------------------------------- | --------------- | ------ |
 | **auth token**| `GET /api/auth/token` (Better Auth, client)    | session cookie  | ✅ plugin + frontend token cache |
 | **users**     | `GET /api/users/stats` (dashboard numbers)     | admin           | ✅     |
+|               | `GET /api/users/public-stats` (student/tutor totals only) | public | ✅ aggregate counts; excludes banned accounts |
 |               | `GET /api/users`                               | admin           | ✅ sample (returns `data: null`) |
 |               | `GET /api/users/:email`                        | self / admin    | ⬜ not needed yet |
 |               | `PATCH /api/users/profile`                    | self            | ❌ not built — profile goes through Better Auth `updateUser` |
@@ -458,8 +462,9 @@ Notes:
   fields; `role` is managed by the admin plugin), client, signup form
   (role picker: student/tutor), login form,
   auth API route (`/api/auth/[...all]`).
-- **Public pages**: homepage (`Hero` + `TrustStrip` + `FeaturedTuitions` +
-  `PlanSection`), `/tuitions` browse with client-side filters,
+- **Public pages**: homepage (`Hero` + feature strip + `FeaturedTuitions` +
+  `PlanSection` + student/tutor workflow + popular subjects/live member
+  counts), `/tuitions` browse with client-side filters,
   `/tuitions/[id]` detail + apply dialog + share/bookmark, `/pricing`,
   `/how-it-works` (static), `/payment/success` (Stripe verify), footer with
   quick links.
@@ -567,7 +572,7 @@ Notes:
   UI only, no behavior. (The Navbar has no search box.)
 - Hero search on the homepage — only shows a toast ("opens in a later
   phase") instead of navigating to `/tuitions` with the query.
-- Footer social links, TrustStrip stats (1.5M+ etc.) — static/hard-coded.
+- Footer social links — UI only.
 
 > Everything else that used to be a placeholder is now implemented: all
 > three dashboard overviews, student my-applications / saved-tuitions,
@@ -800,4 +805,7 @@ Better Auth **admin plugin** — `admin()` + `adminClient()` (D9), the
 `dashboard/admin/users` table (list / search / change role / ban) and a
 signup hook that blocks self-registered admins. 2026-11-23 (later): added
 server JWT plugin/client, in-memory token cache + Bearer headers on API
-helpers, and server-side role guards for student/tutor/admin dashboard layouts.*
+helpers, and server-side role guards for student/tutor/admin dashboard layouts.
+2026-11-23 (later): added the homepage workflow and subject sections with
+public student/tutor aggregate counts; replaced the old hard-coded trust-strip
+numbers with factual platform features.*

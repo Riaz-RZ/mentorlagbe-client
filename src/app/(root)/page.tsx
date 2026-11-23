@@ -2,6 +2,8 @@ import Hero from "@/components/shared/Hero";
 import TrustStrip from "@/components/shared/TrustStrip";
 import FeaturedTuitions from "@/components/shared/FeaturedTuitions";
 import PlanSection from "@/components/shared/PlanSection";
+import HomeHowItWorks from "@/components/shared/HomeHowItWorks";
+import SubjectsAndStats from "@/components/shared/SubjectsAndStats";
 
 export default function Home() {
     return (
@@ -17,6 +19,12 @@ export default function Home() {
 
             {/* Free vs Pro pricing (Stripe later) */}
             <PlanSection />
+
+            {/* Student and tutor workflows */}
+            <HomeHowItWorks />
+
+            {/* Popular subjects and live platform member totals */}
+            <SubjectsAndStats />
         </main>
     );
 }
