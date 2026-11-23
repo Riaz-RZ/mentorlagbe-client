@@ -245,7 +245,7 @@ const UserManagementPage = () => {
                 </div>
             ) : filtered.length === 0 ? (
                 <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-primary/25 bg-linear-to-br from-card to-primary/5 py-16 text-center shadow-inner">
-                    <span className="flex size-14 items-center justify-center rounded-2xl border border-primary/20 bg-primary/10 text-primary shadow-lg shadow-primary/10 [transform:perspective(700px)_rotateY(10deg)]">
+                    <span className="flex size-14 items-center justify-center rounded-2xl border border-primary/20 bg-primary/10 text-primary shadow-lg shadow-primary/10 transform-[perspective(700px)_rotateY(10deg)]">
                         <SearchX className="size-6" />
                     </span>
                     <h2 className="mt-4 text-lg font-semibold">
