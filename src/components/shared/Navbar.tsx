@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 
 import { authClient } from "@/lib/auth-client";
+import { clearJwtToken } from "@/lib/jwt-token";
 
 import { Button, buttonVariants } from "@/components/ui/button";
 import {
@@ -152,6 +153,7 @@ export default function Navbar() {
         return;
       }
 
+      clearJwtToken();
       closeMobileMenu();
       toast.success("You have signed out successfully.");
 

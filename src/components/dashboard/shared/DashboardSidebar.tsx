@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
 import { authClient } from "@/lib/auth-client";
+import { clearJwtToken } from "@/lib/jwt-token";
 
 import {
     BadgeCheck,
@@ -352,6 +353,7 @@ export default function DashboardSidebar() {
                 return;
             }
 
+            clearJwtToken();
             toast.success("You have signed out successfully.");
 
             router.replace("/");

@@ -1,5 +1,6 @@
 // GET-only API helpers (read operations).
 // For POST / PATCH / DELETE use src/lib/actions.ts instead.
+import { getJwtToken } from "@/lib/jwt-token";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000";
 
@@ -8,13 +9,17 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000";
 //   error:   { success: false, message }
 // This helper returns `data` on success and throws `message` on failure.
 async function request(path: string): Promise<unknown> {
-  const res = await fetch(`${API_URL}${path}`, { cache: "no-store" }).catch(
-    () => {
-      throw new Error(
-        "Cannot reach the API server. Make sure the backend is running on port 5000 (npm start in mentorlagbe-server)."
-      );
-    }
-  );
+  const token = await getJwtToken();
+  const headers = token ? { Authorization: `Bearer ${token}` } : undefined;
+
+  const res = await fetch(`${API_URL}${path}`, {
+    cache: "no-store",
+    headers,
+  }).catch(() => {
+    throw new Error(
+      "Cannot reach the API server. Make sure the backend is running on port 5000 (npm start in mentorlagbe-server)."
+    );
+  });
 
   const body = await res.json().catch(() => null);
 

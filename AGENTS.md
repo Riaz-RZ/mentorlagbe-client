@@ -77,10 +77,11 @@ All Assignments Answers/
 
 Key frontend files:
 
-- `src/lib/auth.ts` — Better Auth **server** config (MongoDB adapter, `role` + `plan` additional fields; **no `jwt()` plugin yet**).
-- `src/lib/auth-client.ts` — Better Auth **client** (`authClient`, `signIn`, `signUp`, `useSession`).
-- `src/lib/api.ts` — `apiGet<T>(path)` for GET requests (parses `{ success, message, data }`, throws `message`).
-- `src/lib/actions.ts` — `apiPost` / `apiPatch` / `apiDelete` + `isPlanLimitError()` (detects 403 plan-limit messages to show an upgrade CTA).
+- `src/lib/auth.ts` — Better Auth **server** config (MongoDB adapter, `role` + `plan` additional fields, `jwt()` plugin).
+- `src/lib/auth-client.ts` — Better Auth **client** (`authClient`, `signIn`, `signUp`, `useSession`, `jwtClient`).
+- `src/lib/jwt-token.ts` — retrieves `/api/auth/token`, caches the JWT in memory until shortly before expiry, and clears it on sign-out.
+- `src/lib/api.ts` — `apiGet<T>(path)` for GET requests (attaches a Bearer token when signed in; parses `{ success, message, data }`).
+- `src/lib/actions.ts` — `apiPost` / `apiPatch` / `apiDelete` (attach a Bearer token) + `isPlanLimitError()` (detects 403 plan-limit messages to show an upgrade CTA).
 - `src/lib/imgbb.ts` — `uploadToIMGBB(file)` → posts to `api.imgbb.com`, returns the public URL (D4).
 - `src/lib/stripe.ts` — `server-only` Stripe SDK instance (used only by the sample `checkout_sessions` route).
 - `src/app/api/auth/[...all]/route.ts` — Better Auth HTTP handler (all auth endpoints live under `/api/auth/*`).
@@ -89,7 +90,7 @@ Key frontend files:
 - `src/app/(root)/page.tsx` — homepage: `Hero` + `TrustStrip` + `FeaturedTuitions` + `PlanSection`.
 - `src/app/(root)/tuitions/page.tsx` — browse page (client-side search/subject/class/mode/fee filters), `tuitions/[id]` — detail page + apply dialog.
 - `src/app/(root)/pricing/page.tsx`, `how-it-works/page.tsx`, `payment/success/page.tsx` — pricing (PlanSection), static how-it-works, Stripe verify page.
-- `src/app/(dashboard)/layout.tsx` — dashboard shell (sidebar + header). **No route guard yet.**
+- `src/app/(dashboard)/layout.tsx` — dashboard shell (sidebar + header); student/tutor/admin child layouts enforce roles server-side.
 - `src/components/dashboard/shared/DashboardSidebar.tsx` — role-aware nav (student/tutor/admin), sign-out.
 - `src/components/dashboard/shared/DashboardHeader.tsx` — page title, search, notifications, user dropdown.
 - `src/components/dashboard/shared/DashboardPageHeader.tsx`, `OverviewCards.tsx` — shared page banner (`StatCard` / `ActionRow`) used by all dashboard pages.
@@ -103,7 +104,7 @@ Key frontend files:
 | Runtime         | Node.js, ESM (`"type": "module"`)                  |
 | Framework       | Express **5.3**                                    |
 | Database        | MongoDB Atlas via official `mongodb` driver **7**  |
-| Auth            | Better Auth JWT — **planned**, Express does not verify it yet (Phase 0) |
+| Auth            | Better Auth JWT, verified by Express with `jose` and JWKS middleware |
 | Entry file      | `src/server.js` (`src/app.js` holds the app)       |
 | Scripts         | `npm start` / `npm run dev` (node --watch)         |
 | Port            | `process.env.PORT \|\| 5000`                       |
@@ -119,7 +120,9 @@ mentorlagbe-server/
 │   │   └── db.js              # connectToMongoDB() + getDb() + 5 collection refs
 │   ├── middleware/
 │   │   ├── notFound.js        # 404 handler for unknown routes
-│   │   └── errorHandler.js    # global error handler (always last)
+│   │   ├── errorHandler.js    # global error handler (always last)
+│   │   ├── verifyToken.js     # EdDSA JWT verification via Better Auth JWKS
+│   │   └── requireRole.js     # role authorization middleware
 │   ├── routes/
 │   │   ├── healthRoutes.js    # GET /api/health
 │   │   ├── users.js           # GET /api/users/stats (admin), sample GET /api/users
@@ -136,7 +139,7 @@ mentorlagbe-server/
 ├── .env                       # DB_URI, PORT, CLIENT_URL, STRIPE_SECRET_KEY (gitignored)
 ├── .env.example               # placeholder values, no secrets
 ├── .gitignore                 # node_modules, .env
-└── package.json               # start/dev scripts; deps: express, cors, dotenv, mongodb, stripe
+└── package.json               # start/dev/test scripts; deps include jose
 ```
 
 Notes:
@@ -147,18 +150,18 @@ Notes:
   logic (no comment-only stubs left); only `GET /api/users/:email` and
   `PATCH /api/users/:email/role` from the original plan are missing (profile
   edits go through Better Auth's `updateUser` on the frontend instead).
-- **No endpoint is behind JWT middleware yet.** Every route currently trusts
-  email/role values from the query string or body (marked with
-  `TODO(Phase 0)` comments in the route files). See section 5 and known
-  issue #9.
+- **JWT middleware is implemented.** Protected routes verify the Better Auth
+  JWT and take identity/role from `req.user`; the health route, public tuition
+  listings, payment status boolean, and signature-verified Stripe webhook
+  remain intentionally unauthenticated.
 
 Backend foundation status: **foundation + all planned API modules complete**
 — Express app, dotenv env validation, CORS (`CLIENT_URL`), `express.json()`,
 MongoDB connection (server starts only after DB connects), 404 + global error
 middleware, consistent `{ success, message, data }` response format,
-`GET /api/health`, and working tuitions / applications / saved / payments /
-admin-stats routes. **JWT auth middleware (`verifyToken` / `requireRole`) is
-still not implemented** (see roadmap Phase 0).
+`GET /api/health`, working tuitions / applications / saved / payments /
+admin-stats routes, and `verifyToken` / `requireRole` middleware using
+Better Auth's JWKS endpoint.
 
 ## 4. Authentication Flow (Better Auth — DO NOT REBUILD)
 
@@ -170,22 +173,21 @@ Signup/Login (Next.js)
              └─ profile edits: authClient.updateUser() / changePassword()
                 (UpdateProfileForm — Better Auth writes the doc directly)
 
-Frontend needs to call the Express API   ← NOT BUILT YET (Phase 0)
+Frontend calls the Better Auth token endpoint when signed in
    └─ GET /api/auth/token   (Better Auth jwt plugin, requires session cookie)
-        └─ returns { token: "<JWT>" }   ← JWT payload = verified session user
+        └─ returns { token: "<JWT>" }   ← signed session user token, cached in memory
              (includes id, email, name, role)
 
-Express API calls                          ← NOT BUILT YET (Phase 0)
+Express API calls                          ← CLIENT SENDS TOKEN; SERVER VERIFIES IT
    └─ Authorization: Bearer <JWT>
         └─ verifyToken middleware → JWKS verification (see Decision D2)
              └─ req.user = { id, email, role }   ← trusted, server-signed
 ```
 
-> ⚠️ The bottom two halves of this diagram are the **target design**. The
-> `jwt()` plugin is not in `src/lib/auth.ts` yet and the Express API has no
-> `verifyToken` — today the frontend passes `studentEmail` / `tutorEmail` /
-> `userEmail` as query/body params and the backend trusts them (all routes
-> carry `TODO(Phase 0)` comments).
+> JWT issuance, client sending, and Express verification are implemented.
+> Protected routes use the verified `req.user`; the health route, public
+> tuition listings, payment status boolean, and signature-verified Stripe
+> webhook remain intentionally accessible without a Bearer token.
 
 - Better Auth owns **signup, login, session, password, profile update** — nothing else does.
 - The `role` field is a Better Auth `additionalFields` value, set at signup
@@ -196,12 +198,11 @@ Express API calls                          ← NOT BUILT YET (Phase 0)
   see known issue #6 for the `users` vs `user` mismatch in `db.js`.
 - `admin` is **not** selectable at signup (see Decision D3).
 - The frontend never sends a role of its own authority; the backend reads the
-  role only from the verified JWT (once Phase 0 lands).
+  role only from the verified JWT.
 
 ## 5. Authorization Flow (Express middleware)
 
-Reusable middleware to be built in `mentorlagbe-server/src/middleware/`
-(**not created yet** — this is the Phase 0 remainder):
+Reusable middleware in `mentorlagbe-server/src/middleware/`:
 
 1. **`verifyToken`** — reads `Authorization: Bearer <token>`, verifies the JWT
    (signature + expiry), attaches `req.user = { id, email, role }`. Rejects
@@ -209,8 +210,7 @@ Reusable middleware to be built in `mentorlagbe-server/src/middleware/`
 2. **`requireRole("admin")` / `requireRole("tutor", "student")`** — checks
    `req.user.role` against an allowed list, rejects with 403 otherwise.
 
-Permission matrix (the **target** enforcement — today every row is enforced
-only by frontend UI hints, since no route reads a JWT yet):
+Permission matrix (enforced by route middleware and ownership filters):
 
 | Action                                   | student | tutor | admin |
 | ---------------------------------------- | :-----: | :---: | :---: |
@@ -228,11 +228,9 @@ only by frontend UI hints, since no route reads a JWT yet):
 | Update own profile (name, image, password) | ✅    |  ✅   |  ✅   |
 | Upgrade to pro (Stripe)                  |   ✅    |  ✅   |  ❌   |
 
-Ownership rules: a tutor may only touch tuitions where
-`tuition.tutorEmail === req.user.email`; a student may only read applications
-where `application.studentEmail === req.user.email` and saved tuitions where
-`saved.studentEmail === req.user.email`. (All of this becomes real when
-`verifyToken` exists — today the same emails come from query/body params.)
+Ownership rules: tutors may only touch their own tuition posts and associated
+applications; students may only read their own applications and saved
+tuitions. Admin routes are explicitly role-gated.
 
 ## 6. User Roles
 
@@ -280,8 +278,8 @@ where `application.studentEmail === req.user.email` and saved tuitions where
 | daysPerWeek    | number | required                                 |
 | bannerImage    | string | public URL returned by the tutor's direct IMGBB banner upload |
 | description    | string | required                                 |
-| tutorName      | string | from request body (⚠️ JWT pending — known issue #9) |
-| tutorEmail     | string | from request body — ownership key (⚠️ JWT pending) |
+| tutorName      | string | from the verified JWT user                     |
+| tutorEmail     | string | from the verified JWT user — ownership key     |
 | approvalStatus | string | `pending` \| `approved` \| `rejected` (server-forced `pending` on create) |
 | isActive       | bool   | tutor can toggle via `PATCH /:id` (open/close) |
 | createdAt      | date   | server-set (client value ignored) |
@@ -304,8 +302,8 @@ filters client-side.
 | subject          | string | snapshot                                 |
 | monthlyFee       | number | snapshot                                 |
 | tutorEmail       | string | used for tutor ownership check           |
-| studentName      | string | from request body (⚠️ JWT pending)       |
-| studentEmail     | string | from request body — ownership key (⚠️ JWT pending) |
+| studentName      | string | from the verified JWT user                |
+| studentEmail     | string | from the verified JWT user — ownership key |
 | studentPhone     | string | form input                               |
 | preferredSchedule| string | form input                               |
 | studentNote      | string | form input                               |
@@ -349,7 +347,7 @@ it can never create or change anything itself.
 | Field       | Type   | Notes                                    |
 | ----------- | ------ | ---------------------------------------- |
 | tuitionId   | string | tuition `_id` as a **string**            |
-| studentEmail| string | ownership key (⚠️ from query/body, JWT pending) |
+| studentEmail| string | ownership key from the verified JWT              |
 | savedAt     | date   | sort key (newest first)                  |
 
 Rules: one row per (tuitionId, studentEmail) — `400 already saved` on
@@ -361,40 +359,40 @@ docs, keeping the newest-saved order.
 
 Base URL: `http://localhost:5000`.
 
-> ⚠️ **No route requires `Authorization: Bearer <JWT>` yet** — every email /
-> role used for ownership or admin checks comes from the query string or
-> body (marked ⚠️ below, `TODO(Phase 0)` in code). The "Access" column is
-> the intended rule, not the current enforcement.
+> Protected Express routes require `Authorization: Bearer <JWT>` and enforce
+> roles/ownership from its verified claims. Public routes are marked public;
+> payment status returns only a boolean, and the Stripe webhook verifies its
+> own signature.
 
 | Module        | Method + Path                                  | Intended access | Status |
 | ------------- | ---------------------------------------------- | --------------- | ------ |
-| **auth token**| `GET /api/auth/token` (Better Auth, client)    | session cookie  | ⬜ `jwt()` plugin not added yet (D2) |
-| **users**     | `GET /api/users/stats` (dashboard numbers)     | admin (⚠️ public) | ✅     |
+| **auth token**| `GET /api/auth/token` (Better Auth, client)    | session cookie  | ✅ plugin + frontend token cache |
+| **users**     | `GET /api/users/stats` (dashboard numbers)     | admin           | ✅     |
 |               | `GET /api/users`                               | admin           | ✅ sample (returns `data: null`) |
 |               | `GET /api/users/:email`                        | self / admin    | ⬜ not needed yet |
 |               | `PATCH /api/users/profile`                    | self            | ❌ not built — profile goes through Better Auth `updateUser` |
 |               | `PATCH /api/users/:email/role`                | admin           | ➖ superseded by Better Auth admin plugin (D9) |
 | **admin plugin** | `GET /api/auth/admin/list-users`, `POST .../set-role`, `.../ban-user`, `.../unban-user` (Better Auth) | admin session | ✅ powers `dashboard/admin/users` |
-| **tuitions**  | `POST /api/tuitions`                           | tutor (⚠️ email from body) | ✅ (free = max 2) |
+| **tuitions**  | `POST /api/tuitions`                           | tutor/admin     | ✅ (identity from JWT; free tutor = max 2) |
 |               | `GET /api/tuitions` (approved + active)        | public          | ✅ (server-side filters ⬜ — filtering is client-side) |
 |               | `GET /api/tuitions/latest` (6 newest)          | public          | ✅     |
-|               | `GET /api/tuitions/mine`                       | tutor (⚠️ email from query) | ✅     |
-|               | `GET /api/tuitions/all` (all statuses)         | admin (⚠️ public) | ✅     |
+|               | `GET /api/tuitions/mine`                       | tutor own posts | ✅     |
+|               | `GET /api/tuitions/all` (all statuses)         | admin           | ✅     |
 |               | `GET /api/tuitions/:id`                        | public          | ✅     |
-|               | `PATCH /api/tuitions/:id` (edit + `isActive`)  | owner tutor (⚠️ no ownership check) | ✅ |
-|               | `PATCH /api/tuitions/:id/status`               | admin (⚠️ no JWT) | ✅ (approve/reject/reinstate) |
-|               | `DELETE /api/tuitions/:id`                     | owner tutor (⚠️ no ownership check) | ✅ |
-| **applications** | `POST /api/applications`                    | student (⚠️ email from body) | ✅ (no dupes, free = max 5) |
-|               | `GET /api/applications/mine`                   | student own (⚠️ email from query) | ✅ |
-|               | `GET /api/applications/tutor`                  | tutor for own posts (⚠️ email from query) | ✅ (replaces the old `/tuition/:tuitionId` plan) |
-|               | `PATCH /api/applications/:id/status`           | owner tutor (⚠️ no ownership check) | ✅ (accepted/rejected) |
-| **saved**     | `GET /api/saved`                               | student own (⚠️ email from query) | ✅ (approved+active join) |
-|               | `POST /api/saved`                              | student (⚠️ email from body) | ✅ (free = max 5) |
+|               | `PATCH /api/tuitions/:id` (edit + `isActive`)  | owner tutor/admin | ✅ |
+|               | `PATCH /api/tuitions/:id/status`               | admin           | ✅ (approve/reject/reinstate) |
+|               | `DELETE /api/tuitions/:id`                     | owner tutor/admin | ✅ |
+| **applications** | `POST /api/applications`                    | student         | ✅ (no dupes, free = max 5; identity/snapshot from server) |
+|               | `GET /api/applications/mine`                   | student own     | ✅ |
+|               | `GET /api/applications/tutor`                  | tutor own posts/admin all | ✅ |
+|               | `PATCH /api/applications/:id/status`           | owner tutor/admin | ✅ (accepted/rejected) |
+| **saved**     | `GET /api/saved`                               | student own     | ✅ (approved+active join) |
+|               | `POST /api/saved`                              | student         | ✅ (free = max 5) |
 |               | `DELETE /api/saved`                            | student own      | ✅     |
-| **payments**  | `POST /api/payments/checkout`                  | student/tutor (⚠️ email from body) | ✅ ($15 tutor / $10 student) |
+| **payments**  | `POST /api/payments/checkout`                  | student/tutor   | ✅ ($15 tutor / $10 student; identity from JWT) |
 |               | `POST /api/payments/webhook`                   | Stripe (signature-verified, raw body) | ✅ **source of truth**: records payment + flips `plan` |
 |               | `GET /api/payments/status?sessionId=`          | anyone (read-only) | ✅ returns `{ recorded }` — success page polls it |
-|               | `GET /api/payments`                            | admin (⚠️ public) | ✅ (empty until a real checkout happens) |
+|               | `GET /api/payments`                            | admin           | ✅ (empty until a real checkout happens) |
 | **upload**    | IMGBB from the browser (D4)                    | —               | ✅ `src/lib/imgbb.ts` — used for profile photos and tuition banners |
 
 ## 9. Environment Variables
@@ -425,7 +423,8 @@ STRIPE_WEBHOOK_SECRET=whsec_...   # ✅ key added — VALUE still empty, must be
 
 Notes:
 - `.env.example` on the server lists `DB_URI`, `PORT`, `CLIENT_URL`,
-  `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` (placeholders, no real secrets).
+  optional `BETTER_AUTH_URL`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`
+  (placeholders, no real secrets).
 - **Webhook delivery setup** (required for Pro upgrades to complete):
   - *Production*: Stripe Dashboard → Developers → Webhooks → add endpoint
     `https://<your-domain>/api/payments/webhook` → copy the **Signing
@@ -434,8 +433,8 @@ Notes:
     (Stripe CLI) and use the `whsec_…` it prints.
   - If the secret is missing the server still boots (warning only) and the
     webhook responds `500 STRIPE_WEBHOOK_SECRET is missing…`.
-- **No `BETTER_AUTH_URL` on the server** — only needed once JWKS
-  verification (D2) is set up.
+- `BETTER_AUTH_URL` is an optional server override for the JWKS origin;
+  verification defaults to `CLIENT_URL`.
 - `src/server.js` validates required vars (`DB_URI`, `CLIENT_URL`) at startup
   and exits with a clear message if any are missing; a missing
   `STRIPE_WEBHOOK_SECRET` only prints a warning. Stripe's secret key is
@@ -459,8 +458,13 @@ Notes:
   `/how-it-works` (static), `/payment/success` (Stripe verify), footer with
   quick links.
 - **API layer**: `src/lib/api.ts` (GET) + `src/lib/actions.ts` (POST/PATCH/
-  DELETE + `isPlanLimitError`) — every page uses these; consistent
+  DELETE + `isPlanLimitError`) — every page uses these; attaches the cached
+  Better Auth JWT as a Bearer token when signed in and parses the consistent
   `{ success, message, data }` envelope.
+- **JWT client flow**: Better Auth `jwt()` / `jwtClient()` are configured;
+  login retrieves a token from `/api/auth/token`, shared API helpers attach
+  it, and sign-out clears the in-memory token cache. Express verification is
+  still pending.
 - **Dashboard shell**: role-aware sidebar (per-role nav incl. Saved Tuitions,
   Applicants, moderation links), header (page title, search, notifications,
   user menu), `DashboardPageHeader` + `OverviewCards` shared pieces,
@@ -513,7 +517,14 @@ Notes:
   `saved.js` (3), `payments.js` (checkout/webhook/status/list), `users.js`
   (`/stats` + sample), `healthRoutes.js`.
 - Consistent response shape everywhere: `{ success, message, data? }`.
-- **Dependencies**: express, cors, dotenv, mongodb + `stripe` (server).
+- **JWT authorization**: `verifyToken` validates Better Auth EdDSA JWTs against
+  the remote JWKS endpoint; `requireRole` and route-level ownership filters
+  protect private endpoints. Public tuition reads, health, payment status, and
+  the signature-verified Stripe webhook remain intentionally accessible.
+- **JWT tests**: Node's built-in test runner covers valid/invalid/expired
+  tokens, role checks, and protected-vs-public route behavior.
+- **Dependencies**: express, cors, dotenv, mongodb, `stripe`, and `jose`
+  (server).
 
 #### Backend test results (actually run on 2026-11-21)
 
@@ -557,11 +568,6 @@ Notes:
 
 ### ❌ Not started
 
-- **JWT token flow**: `jwt()` plugin in `src/lib/auth.ts`, `GET /api/auth/token`,
-  `verifyToken` / `requireRole` middleware, `jose` dependency — every route's
-  `TODO(Phase 0)` still open.
-- **Dashboard route protection** (no `middleware.ts`, no client-side role
-  guard — signed-out visitors see page content).
 - **Server-side search/filter query params** on `GET /api/tuitions`
   (current filtering is client-side in the browser).
 - **`phone` / `bio` profile fields** (not declared, not sent, not shown).
@@ -570,20 +576,19 @@ Notes:
 
 ## 11. Implementation Roadmap
 
-**Phase 0 — Foundations (the only truly blocking remainder)**
+**Phase 0 — Foundations** ✅ **complete**
 
 1. ✅ **Backend foundation done** — Express app, env validation, CORS
    (`CLIENT_URL`), `express.json()`, MongoDB connection, 404 + global error
    handler, health check, `.env.example`, `npm start`/`npm run dev` scripts.
-2. ⬜ Add `jwt()` plugin from `better-auth/plugins/jwt` to `src/lib/auth.ts`
-   (do not touch existing options — only add the plugin).
+2. ✅ Add the `jwt()` plugin from `better-auth/plugins/jwt` to `src/lib/auth.ts`;
+   `jwtClient()` is configured in `src/lib/auth-client.ts`.
 3. ✅ Client env vars present: `NEXT_PUBLIC_API_URL`, `NEXT_PUBLIC_IMGBB_API_KEY`.
-4. ⬜ Extend `src/lib/api.ts` / `src/lib/actions.ts` to fetch
-   `/api/auth/token`, cache the JWT, and attach `Authorization: Bearer` to
-   every request (keep the same `{ success, message, data }` parsing).
-5. ⬜ Server: add `jose` (D2), `verifyToken` + `requireRole` middleware in
-   `src/middleware/`, then replace every `TODO(Phase 0)` query/body email
-   with `req.user` (routes: tuitions, applications, saved, payments, users).
+4. ✅ Extend `src/lib/api.ts` / `src/lib/actions.ts` to fetch
+   `/api/auth/token`, cache the JWT in memory, and attach
+   `Authorization: Bearer` to API requests (keep the same response parsing).
+5. ✅ Server: `jose`, `verifyToken` + `requireRole`, and `req.user` identity
+   enforcement across tuitions, applications, saved, payments, and users.
 
 **Phase 1 — Users API + admin user management** ✅ **done (admin plugin)**
 
@@ -592,8 +597,8 @@ Notes:
   Express endpoints (`GET /api/users/:email`, `PATCH /api/users/:email/role`)
   were **not built** — Better Auth's `/api/auth/admin/*` routes replace them
   and already enforce the admin role.
-- ⬜ (optional) Only revisit a custom users API if Phase 0 JWT middleware
-  ever needs to serve user data to the Express API.
+- ⬜ (optional) Only revisit a custom users API if Express later needs
+  profile data beyond Better Auth's admin plugin.
 
 **Phase 2 — Tuitions API + tutor pages** ✅ **done**
 
@@ -628,13 +633,14 @@ Notes:
   acknowledged with 200 and ignored, status endpoint read-only.
 - ⬜ **User setup step**: fill `STRIPE_WEBHOOK_SECRET` in the server `.env`
   (dashboard signing secret, or `stripe listen` for local dev) — see §9.
-- ⬜ Optional hardening: verify the JWT on checkout/status so only the
-  payer can call them (currently public reads).
+- ✅ Checkout is JWT-protected and uses the verified user's email/role.
+  Payment status intentionally remains public and only returns whether a
+  checkout session has been recorded.
 
 **Phase 6 — Route protection & polish**
 
-- ⬜ Dashboard layout guard: no session → `/login`; role mismatch → own
-  dashboard (client-side, using existing `useSession`), or `middleware.ts`.
+- ✅ Dashboard student/tutor/admin layouts enforce server-side role checks;
+  no session → `/login`, wrong role → `/unauthorized`.
 - ⬜ Fix known issues (section 13): login/signup redirect, `/register` link,
   Google login decision, `users` vs `user` cleanup, dead Stripe sample code.
 
@@ -646,8 +652,8 @@ Notes:
   better-auth 1.7.25): `GET /api/auth/token` returns `{ token }` for the
   current session; Express verifies it against Better Auth's JWKS endpoint
   (`/api/auth/jwks`, EdDSA) using `jose`. This keeps one auth system and needs
-  no shared secret juggling. **Not implemented yet** — the plugin is still
-  missing from `src/lib/auth.ts` (Phase 0 remainder). *Alternative (simpler
+  no shared secret juggling. The plugin, frontend token flow, and Express
+  verification are implemented. *Alternative (simpler
   but less standard): HS256 shared secret with `jsonwebtoken` — reconsider
   only if JWKS setup gets confusing.*
 - **D3 — Admin users are not self-registered.** Signup offers student/tutor
@@ -698,8 +704,8 @@ Notes:
 1. **No redirect after auth**: `LoginForm` sends `callbackURL: "/"` (should be
    `/dashboard/{role}`) and `SignupForm` uses `callbackURL: "/login"` (new
    users land back on login instead of their dashboard).
-2. **No route protection**: `/dashboard/*` renders for signed-out visitors
-   (sidebar returns `null`, page content still shows). No `middleware.ts`.
+2. ~~**No dashboard route protection**~~ ✅ **resolved** — student, tutor,
+   and admin layouts use the server-side `requireRole` guard.
 3. **Google login will fail** — no Google OAuth provider configured in Better
    Auth env. The login button really calls `signIn.social({ provider:
    "google" })` (errors → "Google sign-in failed"); the signup Google button
@@ -717,16 +723,10 @@ Notes:
    `npm run dev` now exist.
 8. **Commit messages can overstate progress** — always verify against this
    file, not the git log.
-9. **No endpoint verifies a JWT yet.** `POST /api/tuitions` trusts
-   `tutorName`/`tutorEmail` from the body; `GET /api/tuitions/mine`,
-   `/api/applications/mine`, `/api/applications/tutor`, `GET/POST/DELETE
-   /api/saved` and `POST /api/payments/checkout` trust emails from the query
-   or body; `PATCH /api/tuitions/:id`, `DELETE /api/tuitions/:id` and
-   `PATCH /api/applications/:id/status` do **no ownership check**; admin
-   endpoints (`GET /api/tuitions/all`, `PATCH .../status`,
-   `GET /api/users/stats`, `GET /api/payments`) are public. All marked with
-   `TODO(Phase 0)`. Until Phase 0 lands: anyone can read anyone's data by
-   changing a query param, and admins are only "protected" by the UI.
+9. ~~**No endpoint verifies a JWT**~~ ✅ **resolved** — protected Express
+   routes verify the token, derive identity from `req.user`, and enforce role
+   and ownership checks. Public tuition reads, health, payment status
+   (`{ recorded }` only), and the signed Stripe webhook remain deliberate.
 10. **Never run `npm run build` while `npm run dev` is running** — mixing
     production build artifacts into `.next` corrupts the dev module graph
     and causes `module factory is not available` / `Could not validate
@@ -751,21 +751,16 @@ Notes:
 
 ## 14. Next Recommended Tasks (in order)
 
-1. **Phase 0 remainder (highest value)**: Better Auth `jwt()` plugin →
-   `src/lib/api.ts` / `actions.ts` attach the Bearer token → server
-   `verifyToken` / `requireRole` (`jose`) → replace every `TODO(Phase 0)`
-   query/body email with `req.user`. This closes known issue #9.
-2. **Fill `STRIPE_WEBHOOK_SECRET`** (issue #13, 2-minute config task):
+1. **Fill `STRIPE_WEBHOOK_SECRET`** (issue #13, 2-minute config task):
    dashboard signing secret or `stripe listen` — until then Pro upgrades
    never complete (§9 has the steps).
-3. **Phase 6 guard**: dashboard route protection (no session → `/login`,
-   role mismatch → own dashboard) + auth redirects (issue #1) + the
-   `/register` link (issue #4).
-4. **Phase 4 backend**: query-param filters on `GET /api/tuitions` + wire
+2. **Phase 6 polish**: auth redirects (issue #1) + the `/register` link
+   (issue #4). Dashboard role checks are implemented in server layouts.
+3. **Phase 4 backend**: query-param filters on `GET /api/tuitions` + wire
    the Hero search to `/tuitions?q=…`.
-5. Cleanup pass (issues #6, #11): delete dead Stripe sample code, unused
+4. Cleanup pass (issues #6, #11): delete dead Stripe sample code, unused
    deps/env, fix or remove `usersCollection`.
-6. Decide Google login (issue #3) and `phone`/`bio` (issue #12), then a
+5. Decide Google login (issue #3) and `phone`/`bio` (issue #12), then a
    final manual test of the full flows (signup → post → approve → apply →
    accept → upgrade).
 
@@ -778,9 +773,11 @@ IMGBB uploads cover profile photos and tuition banners, Stripe now runs on a
 **webhook** (D8: signature-verified raw-body endpoint is the source of
 truth; the success page only polls a read-only status endpoint — the old
 verify endpoint was removed), plan limits (2 posts / 5 bookmarks / 5
-applications) are enforced, and the remaining gaps are JWT middleware
-(Phase 0), filling `STRIPE_WEBHOOK_SECRET`, route protection, and cleanup
+applications) are enforced, and the remaining gaps are filling
+`STRIPE_WEBHOOK_SECRET`, auth redirect polish, and cleanup
 (see sections 10–14). *2026-11-23 (later): user management built with the
 Better Auth **admin plugin** — `admin()` + `adminClient()` (D9), the
 `dashboard/admin/users` table (list / search / change role / ban) and a
-signup hook that blocks self-registered admins.*
+signup hook that blocks self-registered admins. 2026-11-23 (later): added
+server JWT plugin/client, in-memory token cache + Bearer headers on API
+helpers, and server-side role guards for student/tutor/admin dashboard layouts.*

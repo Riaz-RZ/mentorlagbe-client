@@ -1,5 +1,6 @@
 // Mutable API helpers (POST / PATCH / DELETE).
 // For GET requests use src/lib/api.ts instead.
+import { getJwtToken } from "@/lib/jwt-token";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000";
 
@@ -12,9 +13,18 @@ async function request(
   method: "POST" | "PATCH" | "DELETE",
   data?: unknown
 ): Promise<unknown> {
+  const token = await getJwtToken();
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
+
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+
   const res = await fetch(`${API_URL}${path}`, {
     method,
-    headers: { "Content-Type": "application/json" },
+    headers,
     body: data === undefined ? undefined : JSON.stringify(data),
   }).catch(() => {
     throw new Error(

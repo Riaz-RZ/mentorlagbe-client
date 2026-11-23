@@ -15,6 +15,7 @@ import {
 import { toast } from "sonner";
 
 import { authClient } from "@/lib/auth-client";
+import { clearJwtToken, getJwtToken } from "@/lib/jwt-token";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -63,6 +64,13 @@ export default function LoginForm() {
             if (error) {
                 toast.error(error.message || "Invalid email or password.");
                 return;
+            }
+
+            clearJwtToken();
+            if (!(await getJwtToken())) {
+                throw new Error(
+                    "Login succeeded, but the backend authorization token could not be retrieved."
+                );
             }
 
             toast.success("Welcome back! Login successful.");

@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 
 import { authClient } from "@/lib/auth-client";
+import { clearJwtToken } from "@/lib/jwt-token";
 
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -126,6 +127,7 @@ export default function DashboardHeader() {
                 return;
             }
 
+            clearJwtToken();
             toast.success("You have signed out successfully.");
 
             router.replace("/");
