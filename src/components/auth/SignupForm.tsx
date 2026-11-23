@@ -28,7 +28,7 @@ import {
     CardTitle,
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { signUp } from "@/lib/auth-client";
+import { authClient, signUp } from "@/lib/auth-client";
 import Image from "next/image";
 import GoogleMark from "@/components/auth/GoogleMark";
 
@@ -111,6 +111,17 @@ export default function SignupForm() {
             setIsSubmitting(false);
         }
     };
+
+    const handleGoogleSignUp = async () => {
+            try {
+                await authClient.signIn.social({
+                    provider: "google",
+                    callbackURL: "/",
+                });
+            } catch {
+                toast.error("Google sign-in failed. Please try again.");
+            }
+        };
 
     return (
         <Card className="surface-3d gap-1 border-slate-200/80 py-2 shadow-xl shadow-slate-200/50 dark:border-slate-800 dark:bg-slate-900 dark:shadow-none lg:gap-2 lg:py-3">
@@ -406,9 +417,7 @@ export default function SignupForm() {
                     type="button"
                     variant="outline"
                     className="h-9 w-full font-semibold tracking-wide lg:h-10"
-                    onClick={() =>
-                        toast.info("Google sign-up will be available soon.")
-                    }
+                    onClick={handleGoogleSignUp}
                 >
                     <GoogleMark />
                     Sign up with Google

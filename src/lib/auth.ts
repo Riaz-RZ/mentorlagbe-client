@@ -31,6 +31,12 @@ export const auth = betterAuth({
         enabled: true,
         autoSignIn: false,
     },
+    socialProviders: {
+        google: {
+            clientId: process.env.GOOGLE_CLIENT_ID as string,
+            clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
+        },
+    },
 
     // Admin plugin -> /api/auth/admin/* endpoints (list users, set role,
     // ban/unban). They only work for sessions whose role is "admin".
