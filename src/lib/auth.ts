@@ -1,4 +1,5 @@
 import { betterAuth } from "better-auth";
+import { admin } from "better-auth/plugins";
 import { MongoClient } from "mongodb";
 import { mongodbAdapter } from "@better-auth/mongo-adapter";
 
@@ -28,5 +29,23 @@ export const auth = betterAuth({
     },
     emailAndPassword: {
         enabled: true,
-    }
+    },
+    // Admin plugin -> /api/auth/admin/* endpoints (list users, set role,
+    // ban/unban). They only work for sessions whose role is "admin".
+    plugins: [admin()],
+    // Better Auth does not validate the role value sent to signup, so a
+    // crafted request could register as "admin". Only student/tutor can be
+    // created here - admins are promoted directly in the DB later (D3).
+    databaseHooks: {
+        user: {
+            create: {
+                before: async (user) => ({
+                    data: {
+                        ...user,
+                        role: user.role === "tutor" ? "tutor" : "student",
+                    },
+                }),
+            },
+        },
+    },
 });

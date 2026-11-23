@@ -238,9 +238,9 @@ where `application.studentEmail === req.user.email` and saved tuitions where
 
 - **student** — searches tuitions, applies, tracks own application status.
 - **tutor** — posts tuitions, manages own listings and their applicants.
-- **admin** — approves/rejects tuitions, sees all data and Stripe revenue;
-  user/role management is part of the role but **not built yet** (Phase 1).
-  Not created via signup; assigned in the DB (D3).
+- **admin** — approves/rejects tuitions, sees all data and Stripe revenue,
+  and manages users (list / change role / ban) through the Better Auth admin
+  plugin (D9). Not created via signup; assigned in the DB (D3).
 
 ## 7. Database Collections (MongoDB, db: `mentorlagbe`)
 
@@ -373,7 +373,8 @@ Base URL: `http://localhost:5000`.
 |               | `GET /api/users`                               | admin           | ✅ sample (returns `data: null`) |
 |               | `GET /api/users/:email`                        | self / admin    | ⬜ not needed yet |
 |               | `PATCH /api/users/profile`                    | self            | ❌ not built — profile goes through Better Auth `updateUser` |
-|               | `PATCH /api/users/:email/role`                | admin           | ⬜     |
+|               | `PATCH /api/users/:email/role`                | admin           | ➖ superseded by Better Auth admin plugin (D9) |
+| **admin plugin** | `GET /api/auth/admin/list-users`, `POST .../set-role`, `.../ban-user`, `.../unban-user` (Better Auth) | admin session | ✅ powers `dashboard/admin/users` |
 | **tuitions**  | `POST /api/tuitions`                           | tutor (⚠️ email from body) | ✅ (free = max 2) |
 |               | `GET /api/tuitions` (approved + active)        | public          | ✅ (server-side filters ⬜ — filtering is client-side) |
 |               | `GET /api/tuitions/latest` (6 newest)          | public          | ✅     |
@@ -477,7 +478,13 @@ Notes:
 - **Admin**: overview (`GET /api/users/stats`: users/tutors/students/pending/
   revenue), Tuitions moderation (Pending/Approved/Rejected/All tabs +
   Approve/Reject/Reinstate), Transactions (`GET /api/payments` table),
-  profile page. **`admin/users` is still a placeholder card.**
+  profile page.
+- **User Management** (`dashboard/admin/users`): shadcn table (avatar, role
+  badge, status, joined date, search box) driven by the Better Auth **admin
+  plugin** — `authClient.admin.listUsers` (server-side list),
+  `admin.setRole` (role dropdown), `admin.banUser` / `admin.unbanUser`
+  (Ban button). No Express route was needed; the endpoints live at
+  `/api/auth/admin/*` and check the admin role server-side.
 - **Bookmarks**: `SavedTuitionsProvider` context (ids, `toggleSave`) wired
   into `TuitionCard`, tuition detail, and the saved page; 403 plan-limit
   messages trigger an upgrade prompt.
@@ -536,9 +543,6 @@ Notes:
 
 ### 🚧 Placeholders (page exists but is not functional)
 
-- `dashboard/admin/users` — header + "User Management Page" card only (no
-  list, no role dropdown; `GET /api/users/:email` and
-  `PATCH /api/users/:email/role` don't exist yet).
 - `DashboardHeader` search input ("Search...") and notification bell —
   UI only, no behavior. (The Navbar has no search box.)
 - Hero search on the homepage — only shows a toast ("opens in a later
@@ -548,7 +552,8 @@ Notes:
 > Everything else that used to be a placeholder is now implemented: all
 > three dashboard overviews, student my-applications / saved-tuitions,
 > tutor applicants / my-tuitions / post-tuition, admin tuitions /
-> transactions, the three profile pages, and the public homepage.
+> transactions / **users**, the three profile pages, and the public
+> homepage.
 
 ### ❌ Not started
 
@@ -557,7 +562,6 @@ Notes:
   `TODO(Phase 0)` still open.
 - **Dashboard route protection** (no `middleware.ts`, no client-side role
   guard — signed-out visitors see page content).
-- **Admin user management** (list users, change roles).
 - **Server-side search/filter query params** on `GET /api/tuitions`
   (current filtering is client-side in the browser).
 - **`phone` / `bio` profile fields** (not declared, not sent, not shown).
@@ -581,12 +585,15 @@ Notes:
    `src/middleware/`, then replace every `TODO(Phase 0)` query/body email
    with `req.user` (routes: tuitions, applications, saved, payments, users).
 
-**Phase 1 — Users API + admin user management**
+**Phase 1 — Users API + admin user management** ✅ **done (admin plugin)**
 
-- ⬜ Backend: `GET /api/users/:email`, `PATCH /api/users/:email/role`
-  (admin), both behind `verifyToken` + `requireRole('admin')`.
-- ⬜ Frontend: `dashboard/admin/users` table (search, role dropdown) — the
-  last placeholder page.
+- ✅ Frontend: `dashboard/admin/users` table — search, role dropdown,
+  ban/unban, driven by the Better Auth admin plugin (see D9). The planned
+  Express endpoints (`GET /api/users/:email`, `PATCH /api/users/:email/role`)
+  were **not built** — Better Auth's `/api/auth/admin/*` routes replace them
+  and already enforce the admin role.
+- ⬜ (optional) Only revisit a custom users API if Phase 0 JWT middleware
+  ever needs to serve user data to the Express API.
 
 **Phase 2 — Tuitions API + tutor pages** ✅ **done**
 
@@ -675,6 +682,16 @@ Notes:
   *Tradeoffs: webhook delivery must be reachable (Stripe dashboard URL in
   prod, `stripe listen` locally — see §9), which is why the success page
   tolerates a slow/absent delivery instead of failing.*
+- **D9 — Admin user management uses Better Auth's `admin()` plugin**, not
+  Express. `src/lib/auth.ts` adds `plugins: [admin()]` and
+  `src/lib/auth-client.ts` adds `adminClient()`, so the page calls
+  `authClient.admin.listUsers / setRole / banUser / unbanUser`
+  (endpoints `/api/auth/admin/*`, session cookie + admin-role check
+  server-side) — no new backend API was needed. A
+  `databaseHooks.user.create.before` hook in `auth.ts` forces every signup
+  to `student`/`tutor`, because Better Auth does not validate the `role`
+  value sent to signup — otherwise anyone could self-register as `admin`
+  and use these admin endpoints (closes the gap behind D3 / rule #8).
 
 ## 13. Known Issues (fix during the roadmap)
 
@@ -744,13 +761,11 @@ Notes:
 3. **Phase 6 guard**: dashboard route protection (no session → `/login`,
    role mismatch → own dashboard) + auth redirects (issue #1) + the
    `/register` link (issue #4).
-4. **Phase 1**: admin users API + `dashboard/admin/users` table (last
-   placeholder page).
-5. **Phase 4 backend**: query-param filters on `GET /api/tuitions` + wire
+4. **Phase 4 backend**: query-param filters on `GET /api/tuitions` + wire
    the Hero search to `/tuitions?q=…`.
-6. Cleanup pass (issues #6, #11): delete dead Stripe sample code, unused
+5. Cleanup pass (issues #6, #11): delete dead Stripe sample code, unused
    deps/env, fix or remove `usersCollection`.
-7. Decide Google login (issue #3) and `phone`/`bio` (issue #12), then a
+6. Decide Google login (issue #3) and `phone`/`bio` (issue #12), then a
    final manual test of the full flows (signup → post → approve → apply →
    accept → upgrade).
 
@@ -764,5 +779,8 @@ IMGBB uploads cover profile photos and tuition banners, Stripe now runs on a
 truth; the success page only polls a read-only status endpoint — the old
 verify endpoint was removed), plan limits (2 posts / 5 bookmarks / 5
 applications) are enforced, and the remaining gaps are JWT middleware
-(Phase 0), filling `STRIPE_WEBHOOK_SECRET`, route protection, admin user
-management, and cleanup (see sections 10–14).*
+(Phase 0), filling `STRIPE_WEBHOOK_SECRET`, route protection, and cleanup
+(see sections 10–14). *2026-11-23 (later): user management built with the
+Better Auth **admin plugin** — `admin()` + `adminClient()` (D9), the
+`dashboard/admin/users` table (list / search / change role / ban) and a
+signup hook that blocks self-registered admins.*
