@@ -500,7 +500,8 @@ Notes:
   `POST /api/payments/checkout` → `window.location.href = session.url` →
   Stripe fires the webhook (records payment + sets `plan: 'pro'`) →
   `/payment/success` polls `GET /api/payments/status` until the row appears
-  (new "processing" state with Check again after ~18s), then shows success.
+  (new "processing" state with Check again after ~18s), force-refreshes the
+  Better Auth session from the database, then shows success.
   Prices: $15 tutor / $10 student (one-time).
 - Navbar (role badge, dashboard/profile links, theme toggle, mobile sheet)
   and Footer. `next.config.ts` allows **all image hosts** (http + https).
@@ -690,7 +691,9 @@ Notes:
   `stripeSessionId` index = idempotent across Stripe's retries) and sets
   `plan: 'pro'`. The success page does **not** write anything — it only
   polls the read-only `GET /api/payments/status?sessionId=…` until the
-  webhook's row appears (amber "processing" + Check again after ~18s).
+  webhook's row appears (amber "processing" + Check again after ~18s), then
+  refetches the Better Auth session with `disableCookieCache` so the updated
+  plan appears immediately without signing out and back in.
   *Tradeoffs: webhook delivery must be reachable (Stripe dashboard URL in
   prod, `stripe listen` locally — see §9), which is why the success page
   tolerates a slow/absent delivery instead of failing.*

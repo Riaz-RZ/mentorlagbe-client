@@ -26,7 +26,10 @@ const POLL_INTERVAL_MS = 1500; // ~18s total before showing "processing"
 // =============================================================
 const PaymentSuccessPage = () => {
     const router = useRouter();
-    const { data: session } = authClient.useSession();
+    const {
+        data: session,
+        refetch: refreshSession,
+    } = authClient.useSession();
 
     const [status, setStatus] = useState<Status>("verifying");
     const [message, setMessage] = useState("");
@@ -65,6 +68,9 @@ const PaymentSuccessPage = () => {
                         `/api/payments/status?sessionId=${encodeURIComponent(sessionId)}`
                     );
                     if (data?.recorded) {
+                        await refreshSession({
+                            query: { disableCookieCache: true },
+                        });
                         if (!cancelled) setStatus("success");
                         return;
                     }
@@ -84,7 +90,7 @@ const PaymentSuccessPage = () => {
         return () => {
             cancelled = true;
         };
-    }, [retryKey]);
+    }, [refreshSession, retryKey]);
 
     // Warn on the error state (once).
     useEffect(() => {
