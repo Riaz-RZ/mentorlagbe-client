@@ -357,7 +357,7 @@ docs, keeping the newest-saved order.
 
 ## 8. API Modules (`mentorlagbe-server/src/routes/`)
 
-Base URL: `http://localhost:5000`.
+Base URL: `https://mentorlagbe-server-bay.vercel.app` (local development can override it with `NEXT_PUBLIC_API_URL`).
 
 > Protected Express routes require `Authorization: Bearer <JWT>` and enforce
 > roles/ownership from its verified claims. Public routes are marked public;
@@ -403,7 +403,7 @@ Base URL: `http://localhost:5000`.
 BETTER_AUTH_SECRET=...            # Better Auth signing secret
 BETTER_AUTH_URL=http://localhost:3000
 DB_URI=mongodb+srv://...          # same Atlas cluster, db: mentorlagbe
-NEXT_PUBLIC_API_URL=http://localhost:5000   # ✅ used by api.ts / actions.ts
+NEXT_PUBLIC_API_URL=https://mentorlagbe-server-bay.vercel.app   # ✅ used by api.ts / actions.ts
 NEXT_PUBLIC_IMGBB_API_KEY=...              # ✅ profile photo + tuition banner uploads (D4)
 NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=...     # present but UNUSED (no stripe.js)
 STRIPE_SECRET_KEY=...             # present but only the dead sample

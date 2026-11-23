@@ -2,7 +2,8 @@
 // For POST / PATCH / DELETE use src/lib/actions.ts instead.
 import { getJwtToken } from "@/lib/jwt-token";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000";
+const API_URL =
+  process.env.NEXT_PUBLIC_API_URL ?? "https://mentorlagbe-server-bay.vercel.app";
 
 // Every backend response has the same envelope:
 //   success: { success: true,  message, data }
