@@ -86,7 +86,7 @@ export default function SignupForm() {
                 email: formData.email.trim().toLowerCase(),
                 password: formData.password,
                 image: formData.image.trim() || undefined,
-                role,
+                signupRole: role,
                 callbackURL: "/login",
             });
 

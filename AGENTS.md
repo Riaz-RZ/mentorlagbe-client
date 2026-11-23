@@ -77,7 +77,7 @@ All Assignments Answers/
 
 Key frontend files:
 
-- `src/lib/auth.ts` — Better Auth **server** config (MongoDB adapter, `role` + `plan` additional fields, `jwt()` plugin).
+- `src/lib/auth.ts` — Better Auth **server** config (MongoDB adapter, `signupRole` + `plan` additional fields, `admin()` + `jwt()` plugins; assigns the server-managed `role` on signup).
 - `src/lib/auth-client.ts` — Better Auth **client** (`authClient`, `signIn`, `signUp`, `useSession`, `jwtClient`).
 - `src/lib/jwt-token.ts` — retrieves `/api/auth/token`, caches the JWT in memory until shortly before expiry, and clears it on sign-out.
 - `src/lib/api.ts` — `apiGet<T>(path)` for GET requests (attaches a Bearer token when signed in; parses `{ success, message, data }`).
@@ -192,10 +192,11 @@ Express API calls                          ← CLIENT SENDS TOKEN; SERVER VERIFI
 > webhook remain intentionally accessible without a Bearer token.
 
 - Better Auth owns **signup, login, session, password, profile update** — nothing else does.
-- The `role` field is a Better Auth `additionalFields` value, set at signup
-  (`student` | `tutor`) and stored on the user document. `plan`
-  (`free` | `pro`, default `free`) is the other additional field with
-  `input: false`, so only the server (Stripe verify endpoint) can set it.
+- The Better Auth admin plugin owns the server-managed `role` field stored on
+  the user document. Signup accepts a validated `signupRole` (`student` |
+  `tutor`) additional field; the server hook maps it to `role`, so clients
+  cannot choose `admin`. `plan` (`free` | `pro`, default `free`) is another
+  additional field with `input: false`, so only the server can set it.
 - Better Auth stores its documents in the **`user`** collection (singular) —
   see known issue #6 for the `users` vs `user` mismatch in `db.js`.
 - `admin` is **not** selectable at signup (see Decision D3).
@@ -451,8 +452,9 @@ Notes:
 
 - Next.js 16 + TS + Tailwind 4 + shadcn/ui project setup, theming (light/dark),
   shared palette (rule #10), `surface-3d` 3D card effects.
-- Better Auth server config (MongoDB adapter, `role` + `plan` additional
-  fields), client, signup form (role picker: student/tutor), login form,
+- Better Auth server config (MongoDB adapter, `signupRole` + `plan` additional
+  fields; `role` is managed by the admin plugin), client, signup form
+  (role picker: student/tutor), login form,
   auth API route (`/api/auth/[...all]`).
 - **Public pages**: homepage (`Hero` + `TrustStrip` + `FeaturedTuitions` +
   `PlanSection`), `/tuitions` browse with client-side filters,
@@ -698,10 +700,11 @@ Notes:
   `authClient.admin.listUsers / setRole / banUser / unbanUser`
   (endpoints `/api/auth/admin/*`, session cookie + admin-role check
   server-side) — no new backend API was needed. A
-  `databaseHooks.user.create.before` hook in `auth.ts` forces every signup
-  to `student`/`tutor`, because Better Auth does not validate the `role`
-  value sent to signup — otherwise anyone could self-register as `admin`
-  and use these admin endpoints (closes the gap behind D3 / rule #8).
+  `databaseHooks.user.create.before` hook in `auth.ts` maps the validated
+  `signupRole` (`student` or `tutor`) to the admin plugin's server-managed
+  `role` field. Signup cannot set `role` directly, preventing self-registration
+  as `admin` and protecting these admin endpoints (closes the gap behind D3 /
+  rule #8).
 
 ## 13. Known Issues (fix during the roadmap)
 

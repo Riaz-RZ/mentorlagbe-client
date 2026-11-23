@@ -12,7 +12,7 @@ export const auth = betterAuth({
     }),
     user: {
         additionalFields: {
-            role: {
+            signupRole: {
                 type: ["student", "tutor"],
                 required: true,
                 input: true,
@@ -41,18 +41,21 @@ export const auth = betterAuth({
             maxAge: 7 * 24 * 60 * 60
         }
     },
-    // Better Auth does not validate the role value sent to signup, so a
-    // crafted request could register as "admin". Only student/tutor can be
-    // created here - admins are promoted directly in the DB later (D3).
+    // The admin plugin reserves `role` as a server-managed field. Map the
+    // validated student/tutor signup choice to it here.
     databaseHooks: {
         user: {
             create: {
-                before: async (user) => ({
-                    data: {
-                        ...user,
-                        role: user.role === "tutor" ? "tutor" : "student",
-                    },
-                }),
+                before: async (user) => {
+                    const { signupRole, ...userData } = user;
+
+                    return {
+                        data: {
+                            ...userData,
+                            role: signupRole === "tutor" ? "tutor" : "student",
+                        },
+                    };
+                },
             },
         },
     },
