@@ -34,6 +34,15 @@ import GoogleMark from "@/components/auth/GoogleMark";
 
 type UserRole = "student" | "tutor";
 
+const isHttpUrl = (value: string) => {
+    try {
+        const url = new URL(value);
+        return url.protocol === "http:" || url.protocol === "https:";
+    } catch {
+        return false;
+    }
+};
+
 export default function SignupForm() {
     const router = useRouter();
     const [role, setRole] = useState<UserRole>("student");
@@ -49,6 +58,8 @@ export default function SignupForm() {
         confirmPassword: "",
         agreeToTerms: false,
     });
+    const imageUrl = formData.image.trim();
+    const hasValidImageUrl = isHttpUrl(imageUrl);
 
     // Handle input changes
     const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -79,6 +90,11 @@ export default function SignupForm() {
             return;
         }
 
+        if (imageUrl && !hasValidImageUrl) {
+            toast.error("Please enter a valid http or https profile image URL.");
+            return;
+        }
+
         try {
             setIsSubmitting(true);
 
@@ -87,7 +103,7 @@ export default function SignupForm() {
                 name: formData.name.trim(),
                 email: formData.email.trim().toLowerCase(),
                 password: formData.password,
-                image: formData.image.trim() || undefined,
+                image: imageUrl || undefined,
                 signupRole: role,
                 callbackURL: "/login",
             });
@@ -270,10 +286,16 @@ export default function SignupForm() {
                             />
                         </div>
 
-                        {formData.image && (
+                        {imageUrl && !hasValidImageUrl && (
+                            <p className="text-xs text-destructive">
+                                Enter a valid http or https image URL.
+                            </p>
+                        )}
+
+                        {hasValidImageUrl && (
                             <div className="flex items-center gap-3">
                                 <Image
-                                    src={formData.image}
+                                    src={imageUrl}
                                     width={50}
                                     height={50}
                                     alt="Profile preview"
