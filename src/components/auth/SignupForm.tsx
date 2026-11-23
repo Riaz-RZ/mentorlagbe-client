@@ -118,14 +118,19 @@ export default function SignupForm() {
                 provider: "google",
                 callbackURL: "/auth/callback",
                 newUserCallbackURL: "/auth/callback",
+                errorCallbackURL: "/auth/callback?from=signup",
                 additionalData: { signupRole: role },
             });
 
             if (error) {
                 toast.error(error.message || "Google sign-up failed. Please try again.");
             }
-        } catch {
-            toast.error("Google sign-up failed. Please try again.");
+        } catch (error) {
+            toast.error(
+                error instanceof Error
+                    ? error.message
+                    : "Google sign-up failed. Please try again."
+            );
         }
     };
 

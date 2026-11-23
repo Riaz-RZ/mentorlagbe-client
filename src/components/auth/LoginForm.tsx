@@ -99,13 +99,18 @@ export default function LoginForm() {
                 provider: "google",
                 callbackURL: "/auth/callback",
                 newUserCallbackURL: "/auth/callback",
+                errorCallbackURL: "/auth/callback?from=login",
             });
 
             if (error) {
                 toast.error(error.message || "Google sign-in failed. Please try again.");
             }
-        } catch {
-            toast.error("Google sign-in failed. Please try again.");
+        } catch (error) {
+            toast.error(
+                error instanceof Error
+                    ? error.message
+                    : "Google sign-in failed. Please try again."
+            );
         }
     };
 

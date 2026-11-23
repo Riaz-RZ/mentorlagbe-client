@@ -1,4 +1,5 @@
 import { betterAuth } from "better-auth";
+import { getOAuthState } from "better-auth/api";
 import { admin, jwt } from "better-auth/plugins";
 import { MongoClient } from "mongodb";
 import { mongodbAdapter } from "@better-auth/mongo-adapter";
@@ -14,7 +15,8 @@ export const auth = betterAuth({
         additionalFields: {
             signupRole: {
                 type: ["student", "tutor"],
-                required: true,
+                // OAuth user creation resolves this from the signed Better Auth state in the database hook.
+                required: false,
                 input: true,
             },
             // "free" | "pro" - only the Stripe verify endpoint sets this
@@ -54,12 +56,16 @@ export const auth = betterAuth({
         user: {
             create: {
                 before: async (user) => {
+                    const oauthState = await getOAuthState<{
+                        signupRole?: unknown;
+                    }>();
                     const { signupRole, ...userData } = user;
+                    const requestedRole = oauthState?.signupRole ?? signupRole;
 
                     return {
                         data: {
                             ...userData,
-                            role: signupRole === "tutor" ? "tutor" : "student",
+                            role: requestedRole === "tutor" ? "tutor" : "student",
                         },
                     };
                 },

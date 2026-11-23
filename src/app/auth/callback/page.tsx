@@ -14,7 +14,25 @@ export default function GoogleAuthCallbackPage() {
     const callbackHandled = useRef(false);
 
     useEffect(() => {
-        if (isPending || callbackHandled.current) {
+        if (callbackHandled.current) {
+            return;
+        }
+
+        const callbackParams = new URLSearchParams(window.location.search);
+        const oauthError = callbackParams.get("error");
+        const returnToSignup = callbackParams.get("from") === "signup";
+
+        if (oauthError) {
+            callbackHandled.current = true;
+            const description = callbackParams.get("error_description");
+            toast.error(
+                description || `Google authentication failed (${oauthError}).`
+            );
+            router.replace(returnToSignup ? "/signup" : "/login");
+            return;
+        }
+
+        if (isPending) {
             return;
         }
 
@@ -22,7 +40,7 @@ export default function GoogleAuthCallbackPage() {
 
         if (!session?.user) {
             toast.error("Google sign-in failed. Please try again.");
-            router.replace("/login");
+            router.replace(returnToSignup ? "/signup" : "/login");
             return;
         }
 

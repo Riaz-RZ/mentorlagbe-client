@@ -77,9 +77,10 @@ All Assignments Answers/
 
 Key frontend files:
 
-- `src/lib/auth.ts` — Better Auth **server** config (MongoDB adapter, `signupRole` + `plan` additional fields, `admin()` + `jwt()` plugins; assigns the server-managed `role` on signup).
+- `src/lib/auth.ts` — Better Auth **server** config (MongoDB adapter, `signupRole` + `plan` additional fields, `admin()` + `jwt()` plugins; resolves the server-managed `role` for email and Google signup).
 - `src/lib/auth-client.ts` — Better Auth **client** (`authClient`, `signIn`, `signUp`, `useSession`, `jwtClient`).
 - `src/lib/jwt-token.ts` — retrieves `/api/auth/token`, caches the JWT in memory until shortly before expiry, and clears it on sign-out.
+- `src/app/auth/callback/page.tsx` — completes Google sign-in, retrieves the API JWT, displays the success toast, and routes by user role.
 - `src/lib/api.ts` — `apiGet<T>(path)` for GET requests (attaches a Bearer token when signed in; parses `{ success, message, data }`).
 - `src/lib/actions.ts` — `apiPost` / `apiPatch` / `apiDelete` (attach a Bearer token) + `isPlanLimitError()` (detects 403 plan-limit messages to show an upgrade CTA).
 - `src/lib/imgbb.ts` — `uploadToIMGBB(file)` → posts to `api.imgbb.com`, returns the public URL (D4).
@@ -193,9 +194,10 @@ Express API calls                          ← CLIENT SENDS TOKEN; SERVER VERIFI
 
 - Better Auth owns **signup, login, session, password, profile update** — nothing else does.
 - The Better Auth admin plugin owns the server-managed `role` field stored on
-  the user document. Signup accepts a validated `signupRole` (`student` |
-  `tutor`) additional field; the server hook maps it to `role`, so clients
-  cannot choose `admin`. `plan` (`free` | `pro`, default `free`) is another
+  the user document. Email signup accepts a validated `signupRole` field;
+  Google signup passes the selected role in OAuth state. The server hook
+  validates either value and maps it to `role`, so clients cannot choose
+  `admin`. `plan` (`free` | `pro`, default `free`) is another
   additional field with `input: false`, so only the server can set it.
 - Better Auth stores its documents in the **`user`** collection (singular) —
   see known issue #6 for the `users` vs `user` mismatch in `db.js`.
@@ -706,22 +708,28 @@ Notes:
   server-side) — no new backend API was needed. A
   `databaseHooks.user.create.before` hook in `auth.ts` maps the validated
   `signupRole` (`student` or `tutor`) to the admin plugin's server-managed
-  `role` field. Signup cannot set `role` directly, preventing self-registration
-  as `admin` and protecting these admin endpoints (closes the gap behind D3 /
-  rule #8).
+  `role` field. For Google signup the selected role is read from Better Auth's
+  OAuth state because OAuth user creation does not populate required
+  additional fields. Signup cannot set `role` directly, preventing
+  self-registration as `admin` and protecting these admin endpoints (closes
+  the gap behind D3 / rule #8).
 
 ## 13. Known Issues (fix during the roadmap)
 
-1. **Login redirect**: `LoginForm` sends `callbackURL: "/"` (should be
-   `/dashboard/{role}`). Signup now explicitly redirects to `/login` after
-   account creation and does not auto-sign-in.
+1. **Email/password login redirect**: `LoginForm` still sends email/password
+   sign-ins to `/` instead of the role dashboard. Google sign-in/up uses
+   `/auth/callback` and routes by verified session role. Signup now explicitly
+   redirects to `/login` after email/password account creation and does not
+   auto-sign-in.
 2. ~~**No dashboard route protection**~~ ✅ **resolved** — student, tutor,
    and admin layouts use the server-side `requireRole` guard, which bypasses
    the cookie cache when validating session state.
-3. **Google login will fail** — no Google OAuth provider configured in Better
-   Auth env. The login button really calls `signIn.social({ provider:
-   "google" })` (errors → "Google sign-in failed"); the signup Google button
-   is UI-only (toast "available soon"). Configure it or remove both.
+3. **Google OAuth setup** — Better Auth is configured with Google and the
+   login/signup buttons share the callback flow. `GOOGLE_CLIENT_ID` and
+   `GOOGLE_CLIENT_SECRET` must be configured in each environment, and Google
+   Cloud must allow `<BETTER_AUTH_URL>/api/auth/callback/google` as an
+   authorized redirect URI. The app callback `/auth/callback` is the
+   post-auth destination, not Google's provider callback.
 4. **Mobile Navbar "Sign Up" links to `/register`** (404 — only `/signup`
    exists). The desktop button is correct; the mobile sheet one is not.
 5. ~~`next.config.ts` only allows `images.unsplash.com`~~ ✅ **resolved** —
