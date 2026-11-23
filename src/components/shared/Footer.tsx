@@ -58,7 +58,7 @@ function SocialIcon({ platform }: { platform: (typeof socialPlatforms)[number] }
 // =============================================================
 const Footer = () => {
     return (
-        <footer className="mt-8 w-full">
+        <footer className=" w-full">
             <div className="w-full border-y border-border bg-card">
                 <div className="mx-auto max-w-7xl px-4 py-10 text-muted-foreground sm:px-6 lg:px-8">
                     <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr]">
