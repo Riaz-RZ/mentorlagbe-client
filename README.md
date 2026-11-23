@@ -142,6 +142,26 @@ API responses follow this structure:
 }
 ```
 
+## Admin Credentials
+
+For evaluation purposes:
+
+- **Email:** admin@gmail.com
+- **Password:** 12345678
+
+
+## NPM Packages
+
+- next
+- react
+- react-dom
+- typescript
+- better-auth
+- tailwindcss
+- lucide-react
+- sonner
+- stripe
+
 ## Stripe Payments
 
 MentorLagbe uses Stripe Checkout for one-time Pro plan purchases.
