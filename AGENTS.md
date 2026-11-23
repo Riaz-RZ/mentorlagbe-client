@@ -121,6 +121,7 @@ mentorlagbe-server/
 │   ├── middleware/
 │   │   ├── notFound.js        # 404 handler for unknown routes
 │   │   ├── errorHandler.js    # global error handler (always last)
+│   │   ├── ensureDatabase.js  # lazily initializes MongoDB for serverless requests
 │   │   ├── verifyToken.js     # EdDSA JWT verification via Better Auth JWKS
 │   │   └── requireRole.js     # role authorization middleware
 │   ├── routes/
@@ -157,7 +158,8 @@ Notes:
 
 Backend foundation status: **foundation + all planned API modules complete**
 — Express app, dotenv env validation, CORS (`CLIENT_URL`), `express.json()`,
-MongoDB connection (server starts only after DB connects), 404 + global error
+MongoDB startup connection plus shared lazy initialization for serverless data
+routes, 404 + global error
 middleware, consistent `{ success, message, data }` response format,
 `GET /api/health`, working tuitions / applications / saved / payments /
 admin-stats routes, and `verifyToken` / `requireRole` middleware using
@@ -507,7 +509,9 @@ Notes:
   `src/app.js` (CORS `CLIENT_URL`, `express.json()`, 5 routers, 404 +
   global error handler in order), `src/config/db.js` (`connectToMongoDB` /
   `getDb` + 5 collection refs + **unique index on
-  `payments.stripeSessionId`**), `notFound` / `errorHandler` middleware,
+  `payments.stripeSessionId`**), `ensureDatabase` lazily initializes and
+  reuses a MongoDB connection for serverless requests, `notFound` /
+  `errorHandler` middleware,
   `ApiResponse` / `ApiError`, `.env.example`, `npm start` / `npm run dev`,
   `index.js` compat wrapper.
 - `src/utils/plan.js` — `getPlan(email)` → `free`/`pro` (used by all three
