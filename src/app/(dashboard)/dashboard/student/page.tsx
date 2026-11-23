@@ -126,7 +126,7 @@ const StudentDashboardPage = () => {
                         href="/tuitions"
                         className={buttonVariants({
                             className:
-                                "gap-2 bg-emerald-600 text-white shadow-lg shadow-emerald-900/15 transition-transform hover:-translate-y-0.5 hover:bg-emerald-700",
+                                "gap-2 bg-emerald-600 text-white shadow-lg shadow-emerald-900/15 hover:bg-emerald-700",
                         })}
                     >
                         <Search className="size-4" />
@@ -219,7 +219,7 @@ const StudentDashboardPage = () => {
             {/* ================= Boost banner ================= */}
             <Link
                 href="/dashboard/student/profile"
-                className="flex items-start gap-3 rounded-xl border border-primary/20 bg-linear-to-r from-primary/10 via-card to-card p-4 shadow-md shadow-primary/5 transition-[transform,box-shadow] duration-300 hover:-translate-y-1 hover:shadow-xl"
+                className="flex items-start gap-3 rounded-xl border border-primary/20 bg-linear-to-r from-primary/10 via-card to-card p-4 shadow-md shadow-primary/5 transition-shadow duration-300 hover:shadow-xl"
             >
                 <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-emerald-600 text-white">
                     <TrendingUp className="size-4" />

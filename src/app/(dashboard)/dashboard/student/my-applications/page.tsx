@@ -116,7 +116,7 @@ const MyApplicationsPage = () => {
                 action={
                     <Button
                         variant="outline"
-                        className="shadow-md transition-transform hover:-translate-y-0.5 hover:shadow-lg"
+                        className="shadow-md transition-shadow hover:shadow-lg"
                         onClick={() => {
                             setIsLoading(true);
                             setRefreshKey((key) => key + 1);

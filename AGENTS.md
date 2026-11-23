@@ -451,7 +451,7 @@ Notes:
 **Frontend**
 
 - Next.js 16 + TS + Tailwind 4 + shadcn/ui project setup, theming (light/dark),
-  shared palette (rule #10), `surface-3d` 3D card effects.
+  shared palette (rule #10), `surface-3d` cards with shadow-only hover effects.
 - Better Auth server config (MongoDB adapter, `signupRole` + `plan` additional
   fields; `role` is managed by the admin plugin), client, signup form
   (role picker: student/tutor), login form,

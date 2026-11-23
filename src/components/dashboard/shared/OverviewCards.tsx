@@ -29,7 +29,7 @@ export function StatCard({
 }) {
     return (
         <Card
-            className="border-primary/20 bg-linear-to-br from-card via-card to-primary/5 shadow-lg shadow-primary/5 transition-[transform,box-shadow] duration-300 hover:transform-[perspective(1000px)_rotateX(2deg)_rotateY(-1deg)_translateY(-4px)] hover:shadow-xl"
+            className="border-primary/20 bg-linear-to-br from-card via-card to-primary/5 shadow-lg shadow-primary/5 transition-shadow duration-300 hover:shadow-xl"
         >
             <CardContent>
                 <div className="flex items-start justify-between gap-2">
@@ -109,7 +109,7 @@ export function ActionRow({
             <button
                 type="button"
                 onClick={onClick}
-                className="group flex w-full items-center gap-3 rounded-lg border border-primary/20 bg-card/80 p-3 text-left shadow-sm transition-[transform,box-shadow] duration-300 hover:transform-[perspective(900px)_rotateY(-1deg)_translateY(-2px)] hover:shadow-md"
+                className="group flex w-full items-center gap-3 rounded-lg border border-primary/20 bg-card/80 p-3 text-left shadow-sm transition-shadow duration-300 hover:shadow-md"
             >
                 {content}
             </button>
@@ -119,7 +119,7 @@ export function ActionRow({
     return (
         <Link
             href={href}
-            className="group flex items-center gap-3 rounded-lg border border-primary/20 bg-card/80 p-3 shadow-sm transition-[transform,box-shadow] duration-300 hover:transform-[perspective(900px)_rotateY(-1deg)_translateY(-2px)] hover:shadow-md"
+            className="group flex items-center gap-3 rounded-lg border border-primary/20 bg-card/80 p-3 shadow-sm transition-shadow duration-300 hover:shadow-md"
         >
             {content}
         </Link>

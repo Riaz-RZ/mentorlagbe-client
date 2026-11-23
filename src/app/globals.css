@@ -198,13 +198,11 @@
       0 16px 32px -24px color-mix(in srgb, var(--foreground) 40%, transparent),
       0 8px 18px -14px color-mix(in srgb, var(--primary) 38%, transparent);
     transition:
-      transform 300ms ease,
       box-shadow 300ms ease,
       border-color 300ms ease;
   }
 
   .surface-3d:hover {
-    transform: perspective(1000px) rotateX(1.5deg) translateY(-3px);
     box-shadow:
       0 24px 44px -26px color-mix(in srgb, var(--foreground) 42%, transparent),
       0 12px 24px -16px color-mix(in srgb, var(--primary) 48%, transparent);
@@ -213,10 +211,6 @@
   @media (prefers-reduced-motion: reduce) {
     .surface-3d {
       transition: none;
-    }
-
-    .surface-3d:hover {
-      transform: none;
     }
   }
 
